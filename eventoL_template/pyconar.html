@@ -772,8 +772,8 @@
                 <div class="relative margin-auto color-white border-bottom border-color-1">
                     <div id="map" class="map"></div>
                     <div style="text-align:center">
-                        <h3 id="place_name"></h3>
-                        <div id="address1" class="event-location-address"></div>
+                        <h3 id="place_name" class="subtitulo text-color-1 margin-none">Centro Cultural San Martín</h3>
+                        <div id="address1" class="event-location-address text-color-1 margin-none"></div>
                         <div class="row" style="width: 100%;">
                             <div class="col-md-6 col-md-offset-3 col-xs-10 col-xs-offset-1">
                                 <hr>
@@ -898,8 +898,7 @@
             var event_place = {{ event.place|safe }};
         map(event_place.geometry.location.lat, event_place.geometry.location.lng);
     
-        $('#place_name').text(event_place.name);
-        $('#address1').html(event_place.adr_address);
+        $('#address1').html(event_place.formatted_address);
     
         $('#directions-car').attr('href',
             'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
