@@ -40,7 +40,11 @@
             <!--[if lte IE 8]><link rel="stylesheet" href="https://cdn.leafletjs.com/leaflet-0.7.7/leaflet.ie.css" /><![endif]-->
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
             <link href="https://fonts.googleapis.com/css?family=Comfortaa:400,700" rel="stylesheet">
-            
+            <link rel="stylesheet" href="http://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
+            <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css" integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
+            <link rel="stylesheet" href="https://fastcdn.org/Leaflet.awesome-markers/2.0.1/leaflet.awesome-markers.css">
+
+           
             <style>
                 .slick-prev:before,
                 .slick-next:before {
@@ -853,6 +857,7 @@
     {% block other-script %}
     <script src="{% static "manager/bower_components/slick-carousel/slick/slick.min.js" %}"></script>
     <script src="{% static "manager/bower_components/leaflet/dist/leaflet.js" %}"></script>
+    <script src="https://fastcdn.org/Leaflet.awesome-markers/2.0.1/leaflet.awesome-markers.min.js"></script>
     
     <script>
         $(document).ready(function () {
@@ -882,8 +887,8 @@
     
     <script>
         $(document).ready(function () {
-            function map(event_lat, event_lon) {
-                var map = L.map('map', {
+            function map(selector, event_lat, event_lon) {
+                var map = L.map(selector, {
                     scrollWheelZoom: false,
                     touchZoom: false
                 }).setView([event_lat, event_lon], 14);
@@ -893,30 +898,108 @@
                 }).addTo(map);
                 map.attributionControl.setPrefix(''); // Don't show the 'Powered by Leaflet' text.
                 L.marker([event_lat, event_lon]).addTo(map);
+                return map;
             }
     
-            var event_place = {{ event.place|safe }};
-        map(event_place.geometry.location.lat, event_place.geometry.location.lng);
+            var event_place = {
+                "address_components":[
+                    {"long_name":"1551","short_name":"1551","types":["street_number"]},
+                    {"long_name":"Sarmiento","short_name":"Sarmiento","types":["route"]},
+                    {"long_name":"San Nicolas","short_name":"San Nicolas","types":["political","sublocality","sublocality_level_1"]},
+                    {"long_name":"Comuna 1","short_name":"Comuna 1","types":["administrative_area_level_2","political"]},
+                    {"long_name":"Buenos Aires","short_name":"CABA","types":["administrative_area_level_1","political"]},
+                    {"long_name":"Argentina","short_name":"AR","types":["country","political"]},
+                    {"long_name":"C1042","short_name":"C1042","types":["postal_code"]},
+                    {"long_name":"ABC","short_name":"ABC","types":["postal_code_suffix"]}
+                ],
+                "formatted_address":"Sarmiento 1551, C1042ABC CABA, Argentina",
+                "geometry":{
+                    "location": {
+                        "lat":-34.6052436,
+                        "lng":-58.388569700000005
+                    },
+                    "location_type":"ROOFTOP",
+                    "viewport":{
+                        "south":-34.6065925802915,
+                        "west":-58.38991868029149,
+                        "north":-34.60389461970851,
+                        "east":-58.387220719708466
+                    }
+                },
+                "place_id":"ChIJbXpzCcTKvJURbeIVAyh6SnU",
+                "plus_code":{
+                    "compound_code":"9JV6+WH Buenos Aires, Argentina","global_code":"48Q39JV6+WH"
+                },
+                "types":["street_address"]
+            };
+            map('map', event_place.geometry.location.lat, event_place.geometry.location.lng);
+
+
+            function createTransportMap() {
+                var transportMap =  map('map-transport', event_place.geometry.location.lat, event_place.geometry.location.lng);
+                L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+                
+                var subwayMarker = L.AwesomeMarkers.icon({
+                    icon: 'subway',
+                });
+                var trainMarker = L.AwesomeMarkers.icon({
+                    icon: 'train',
+                });
+                var bicycleMarker = L.AwesomeMarkers.icon({
+                    icon: 'bicycle',
+                });
+                var busMarker = L.AwesomeMarkers.icon({
+                    icon: 'bus',
+                });
+
+                var transportMakers = [
+                    [[-34.609157, -58.386583], {'title': 'Linea A: estación Sáenz Peña', 'icon': subwayMarker}],
+                    [[-34.6040578, -58.3867263], {'title': 'Linea B: estación Uruguay', 'icon': subwayMarker}],
+                    [[-34.604617, -58.37946], {'title': 'Linea C: estación Diagonal Norte', 'icon': subwayMarker}],
+                    [[-34.602628, -58.385175], {'title': 'Linea D: estación Trivunales', 'icon': subwayMarker}],
+
+                    [[-34.591204, -58.374967], {'title': 'Tren: estación Retiro', 'icon': trainMarker}],
+                    [[-34.628100, -58.380551], {'title': 'Tren: estación Constitución', 'icon': trainMarker}],
+                    
+                    [[-34.606355, -58.385452], {'title': 'Eco Bici: Dr. Rodolfo Rivarola 175', 'icon': bicycleMarker}],                
+                    [[-34.602986, -58.388701], {'title': 'Eco Bici', 'icon': bicycleMarker}],                
+                    
+                    [[-34.605384, -58.38152], {'title': 'Colectivo: estación Oblesico Sur metrobus', 'icon': busMarker}],                
+                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 168', 'icon': busMarker}],                
+                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 102', 'icon': busMarker}],                
+                    [[-34.605346, -58.389133], {'title': 'Colectivo: parada linea 50', 'icon': busMarker}],                
+                    [[-34.604216, -58.388253], {'title': 'Colectivo: parada linea 6, 24, 50 115, 146, 180', 'icon': busMarker}],                
+                    [[-34.605015, -58.385201], {'title': 'Colectivo: parada linea 5, 39, 60', 'icon': busMarker}],                
+                ];
+
+                for (var i = 0; i < transportMakers.length; i++) {
+                    var markerInfo = transportMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(transportMap);
+                }
+            }
+            createTransportMap();
     
-        $('#address1').html(event_place.formatted_address);
+            $('#address1').html(event_place.formatted_address);
     
-        $('#directions-car').attr('href',
-            'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
-            event_place.geometry.location.lng + '&dirflg=d');
+            $('#directions-car').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=d');
     
-        $('#directions-walk').attr('href',
-            'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
-            event_place.geometry.location.lng + '&dirflg=w');
-    
-        $('#directions-bus').attr('href',
-            'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
-            event_place.geometry.location.lng + '&dirflg=r');
-    
-        $('#directions-bike').attr('href',
-            'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
-            event_place.geometry.location.lng + '&dirflg=b');
+            $('#directions-walk').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=w');
+        
+            $('#directions-bus').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=r');
+        
+            $('#directions-bike').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=b');
         });
     </script>
+ 
+
     {% endblock %}
 {% endblock %}
 {% block more-script %}{% endblock %}
