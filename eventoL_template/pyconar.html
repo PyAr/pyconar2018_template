@@ -40,10 +40,6 @@
             <!--[if lte IE 8]><link rel="stylesheet" href="https://cdn.leafletjs.com/leaflet-0.7.7/leaflet.ie.css" /><![endif]-->
             <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
             <link href="https://fonts.googleapis.com/css?family=Comfortaa:400,700" rel="stylesheet">
-            <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/1.5.2/css/ionicons.min.css">
-            <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.2/css/all.css" integrity="sha384-/rXc/GQVaYpyDdyxK+ecHPVYJSN9bmVFBvjA/9eOB+pb3F2w2N6fc5qB9Ew5yIns" crossorigin="anonymous">
-            <link rel="stylesheet" href="https://fastcdn.org/Leaflet.awesome-markers/2.0.1/leaflet.awesome-markers.css">
-
            
             <style>
                 .slick-prev:before,
@@ -1225,7 +1221,6 @@
     {% block other-script %}
     <script src="{% static "manager/bower_components/slick-carousel/slick/slick.min.js" %}"></script>
     <script src="{% static "manager/bower_components/leaflet/dist/leaflet.js" %}"></script>
-    <script src="https://fastcdn.org/Leaflet.awesome-markers/2.0.1/leaflet.awesome-markers.min.js"></script>
     
     <script>
         $(document).ready(function () {
@@ -1307,37 +1302,24 @@
                 var transportMap =  map('map-transport', event_place.geometry.location.lat, event_place.geometry.location.lng);
                 L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
                 
-                var subwayMarker = L.AwesomeMarkers.icon({
-                    icon: 'subway',
-                });
-                var trainMarker = L.AwesomeMarkers.icon({
-                    icon: 'train',
-                });
-                var bicycleMarker = L.AwesomeMarkers.icon({
-                    icon: 'bicycle',
-                });
-                var busMarker = L.AwesomeMarkers.icon({
-                    icon: 'bus',
-                });
-
                 var transportMakers = [
-                    [[-34.609157, -58.386583], {'title': 'Linea A: estación Sáenz Peña', 'icon': subwayMarker}],
-                    [[-34.6040578, -58.3867263], {'title': 'Linea B: estación Uruguay', 'icon': subwayMarker}],
-                    [[-34.604617, -58.37946], {'title': 'Linea C: estación Diagonal Norte', 'icon': subwayMarker}],
-                    [[-34.602628, -58.385175], {'title': 'Linea D: estación Trivunales', 'icon': subwayMarker}],
+                    [[-34.609157, -58.386583], {'title': 'Linea A: estación Sáenz Peña'}],
+                    [[-34.6040578, -58.3867263], {'title': 'Linea B: estación Uruguay'}],
+                    [[-34.604617, -58.37946], {'title': 'Linea C: estación Diagonal Norte'}],
+                    [[-34.602628, -58.385175], {'title': 'Linea D: estación Trivunales'}],
 
-                    [[-34.591204, -58.374967], {'title': 'Tren: estación Retiro', 'icon': trainMarker}],
-                    [[-34.628100, -58.380551], {'title': 'Tren: estación Constitución', 'icon': trainMarker}],
+                    [[-34.591204, -58.374967], {'title': 'Tren: estación Retiro'}],
+                    [[-34.628100, -58.380551], {'title': 'Tren: estación Constitución'}],
                     
-                    [[-34.606355, -58.385452], {'title': 'Eco Bici: Dr. Rodolfo Rivarola 175', 'icon': bicycleMarker}],                
-                    [[-34.602986, -58.388701], {'title': 'Eco Bici', 'icon': bicycleMarker}],                
+                    [[-34.606355, -58.385452], {'title': 'Eco Bici: Dr. Rodolfo Rivarola 175'}],                
+                    [[-34.602986, -58.388701], {'title': 'Eco Bici'}],                
                     
-                    [[-34.605384, -58.38152], {'title': 'Colectivo: estación Oblesico Sur metrobus', 'icon': busMarker}],                
-                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 168', 'icon': busMarker}],                
-                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 102', 'icon': busMarker}],                
-                    [[-34.605346, -58.389133], {'title': 'Colectivo: parada linea 50', 'icon': busMarker}],                
-                    [[-34.604216, -58.388253], {'title': 'Colectivo: parada linea 6, 24, 50 115, 146, 180', 'icon': busMarker}],                
-                    [[-34.605015, -58.385201], {'title': 'Colectivo: parada linea 5, 39, 60', 'icon': busMarker}],                
+                    [[-34.605384, -58.38152], {'title': 'Colectivo: estación Oblesico Sur metrobus'}],                
+                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 168'}],                
+                    [[-34.611379, -58.392065], {'title': 'Colectivo: parada linea 102'}],                
+                    [[-34.605346, -58.389133], {'title': 'Colectivo: parada linea 50'}],                
+                    [[-34.604216, -58.388253], {'title': 'Colectivo: parada linea 6, 24, 50 115, 146, 180'}],                
+                    [[-34.605015, -58.385201], {'title': 'Colectivo: parada linea 5, 39, 60'}],                
                 ];
 
                 for (var i = 0; i < transportMakers.length; i++) {
@@ -1350,56 +1332,40 @@
 
             function createActivitiesMap() {
                 var activitiesMap =  map('map-activities', event_place.geometry.location.lat, event_place.geometry.location.lng);
-                L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
-                
-                var museumMarker = L.AwesomeMarkers.icon({
-                    icon: 'landmark',
-                    markerColor: 'red' 
-                });
-
-                var theaterMarker = L.AwesomeMarkers.icon({
-                    icon: 'theater-masks',
-                    markerColor: 'green' 
-                });
-
-                var otherPlaceMarker = L.AwesomeMarkers.icon({
-                    icon: 'map-marker',
-                    markerColor: 'orange' 
-                });
 
                 var activiesMakers = [
-                    [[-34.606948, -58.385533], {'title': 'Museo de la Mujer Argentina', 'icon': museumMarker}],
-                    [[-34.609707, -58.385867], {'title': 'Palacio Barolo', 'icon': museumMarker}],
-                    [[-34.609329, -58.380006], {'title': 'Museo Argentino de Magia', 'icon': museumMarker}],
-                    [[-34.603522, -58.381558], {'title': 'Obelisco', 'icon': museumMarker}],
-                    [[-34.607858, -58.370370], {'title': 'Casa Rosada', 'icon': museumMarker}],
-                    [[-34.608548, -58.373812], {'title': 'Museo Histórico Nacional del Cabildo y la Revolución de Mayo', 'icon': museumMarker}],
-                    [[-34.607300, -58.373271], {'title': 'Catedral Metropolitana de Buenos Aires', 'icon': museumMarker}],
-                    [[-34.607894, -58.369666], {'title': 'Museo Casa Rosada', 'icon': museumMarker}],
-                    [[-34.603571, -58.369175], {'title': 'Centro Cultural Kirchner - CCK', 'icon': museumMarker}],
-                    [[-34.621943, -58.369980], {'title': 'Museo de Arte Moderno de Buenos Aires', 'icon': museumMarker}],
-                    [[-34.590664, -58.379971], {'title': 'Sede Palacio Noel', 'icon': museumMarker}],
-                    [[-34.579653, -58.405009], {'title': 'Museo de Arte Popular José Hernández', 'icon': museumMarker}],
-                    [[-34.621853, -58.369851], {'title': 'Museo de Arte Contemporaneo de Buenos Aires - MACBA', 'icon': museumMarker}],
-                    [[-34.577013, -58.403194], {'title': 'MALBA', 'icon': museumMarker}],
-                    [[-34.584430, -58.397450], {'title': 'Biblioteca Nacional', 'icon': museumMarker}],
+                    [[-34.606948, -58.385533], {'title': 'Museo de la Mujer Argentina'}],
+                    [[-34.609707, -58.385867], {'title': 'Palacio Barolo'}],
+                    [[-34.609329, -58.380006], {'title': 'Museo Argentino de Magia'}],
+                    [[-34.603522, -58.381558], {'title': 'Obelisco'}],
+                    [[-34.607858, -58.370370], {'title': 'Casa Rosada'}],
+                    [[-34.608548, -58.373812], {'title': 'Museo Histórico Nacional del Cabildo y la Revolución de Mayo'}],
+                    [[-34.607300, -58.373271], {'title': 'Catedral Metropolitana de Buenos Aires'}],
+                    [[-34.607894, -58.369666], {'title': 'Museo Casa Rosada'}],
+                    [[-34.603571, -58.369175], {'title': 'Centro Cultural Kirchner - CCK'}],
+                    [[-34.621943, -58.369980], {'title': 'Museo de Arte Moderno de Buenos Aires'}],
+                    [[-34.590664, -58.379971], {'title': 'Sede Palacio Noel'}],
+                    [[-34.579653, -58.405009], {'title': 'Museo de Arte Popular José Hernández'}],
+                    [[-34.621853, -58.369851], {'title': 'Museo de Arte Contemporaneo de Buenos Aires - MACBA'}],
+                    [[-34.577013, -58.403194], {'title': 'MALBA'}],
+                    [[-34.584430, -58.397450], {'title': 'Biblioteca Nacional'}],
 
-                    [[-34.609716, -58.383922], {'title': 'Teatro Avenida', 'icon': theaterMarker}],
-                    [[-34.608631, -58.386971], {'title': 'Teatro Liceo', 'icon': theaterMarker}],
-                    [[-34.603921, -58.389413], {'title': 'Teatro Astral', 'icon': theaterMarker}],
-                    [[-34.603606, -58.385419], {'title': 'Teatro Metropolitan SURA', 'icon': theaterMarker}],
-                    [[-34.604142, -58.386121], {'title': 'Teatro Apolo', 'icon': theaterMarker}],
-                    [[-34.600796, -58.383033], {'title': 'Teatro Colón', 'icon': theaterMarker}],
-                    [[-34.603395, -58.379009], {'title': 'Teatro Gran Rex', 'icon': theaterMarker}],
-                    [[-34.603558, -58.383051], {'title': 'Broadway Theatre', 'icon': theaterMarker}],
-                    [[-34.603350, -58.376285], {'title': 'Teatro Astros', 'icon': theaterMarker}],
-                    [[-34.603632, -58.393282], {'title': 'Teatro Picadero', 'icon': theaterMarker}],
+                    [[-34.609716, -58.383922], {'title': 'Teatro Avenida'}],
+                    [[-34.608631, -58.386971], {'title': 'Teatro Liceo'}],
+                    [[-34.603921, -58.389413], {'title': 'Teatro Astral'}],
+                    [[-34.603606, -58.385419], {'title': 'Teatro Metropolitan SURA'}],
+                    [[-34.604142, -58.386121], {'title': 'Teatro Apolo'}],
+                    [[-34.600796, -58.383033], {'title': 'Teatro Colón'}],
+                    [[-34.603395, -58.379009], {'title': 'Teatro Gran Rex'}],
+                    [[-34.603558, -58.383051], {'title': 'Broadway Theatre'}],
+                    [[-34.603350, -58.376285], {'title': 'Teatro Astros'}],
+                    [[-34.603632, -58.393282], {'title': 'Teatro Picadero'}],
                     
-                    [[-34.569473, -58.411572], {'title': 'Planetario Galileo Galilei', 'icon': otherPlaceMarker}],
-                    [[-34.545315, -58.449292], {'title': 'Estadio Monumental Antonio Vespucio Liberti', 'icon': otherPlaceMarker}],
-                    [[-34.635452, -58.364735], {'title': 'Estadio Alberto J. Armando', 'icon': otherPlaceMarker}],
-                    [[-34.667684, -58.368130], {'title': 'Estadio Racing Club de Avellaneda', 'icon': otherPlaceMarker}],
-                    [[-34.604364, -58.390208], {'title': 'Paseo La Plaza', 'icon': otherPlaceMarker}],
+                    [[-34.569473, -58.411572], {'title': 'Planetario Galileo Galilei'}],
+                    [[-34.545315, -58.449292], {'title': 'Estadio Monumental Antonio Vespucio Liberti'}],
+                    [[-34.635452, -58.364735], {'title': 'Estadio Alberto J. Armando'}],
+                    [[-34.667684, -58.368130], {'title': 'Estadio Racing Club de Avellaneda'}],
+                    [[-34.604364, -58.390208], {'title': 'Paseo La Plaza'}],
                 ];
 
                 for (var i = 0; i < activiesMakers.length; i++) {
@@ -1412,48 +1378,27 @@
 
             function createLunchMap() {
                 var lunchMap =  map('map-lunch', event_place.geometry.location.lat, event_place.geometry.location.lng);
-                L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
                 
-                var hamburgerMarker = L.AwesomeMarkers.icon({
-                    icon: 'utensils',
-                    markerColor: 'red' 
-                });
-
-                var pizzaMarker = L.AwesomeMarkers.icon({
-                    icon: 'utensils',
-                    markerColor: 'green' 
-                });
-
-                var otherPlaceMarker = L.AwesomeMarkers.icon({
-                    icon: 'utensils',
-                    markerColor: 'orange' 
-                });
-
-                var coffeePlaceMarker = L.AwesomeMarkers.icon({
-                    icon: 'coffee',
-                    markerColor: 'purple' 
-                });
-
                 var restaurantsMakers = [
-                    [[-34.604431, -58.391874], {'title': 'Burger King', 'icon': hamburgerMarker}],
-                    [[-34.607628, -58.391906], {'title': 'Mc Donalds', 'icon': hamburgerMarker}],
-                    [[-34.603742, -58.380287], {'title': 'Mc Donalds', 'icon': hamburgerMarker}],
-                    [[-34.600951, -58.390930], {'title': 'Dellepiane Bar', 'icon': hamburgerMarker}],
+                    [[-34.604431, -58.391874], {'title': 'Burger King'}],
+                    [[-34.607628, -58.391906], {'title': 'Mc Donalds'}],
+                    [[-34.603742, -58.380287], {'title': 'Mc Donalds'}],
+                    [[-34.600951, -58.390930], {'title': 'Dellepiane Bar'}],
 
-                    [[-34.604302, -58.388174], {'title': 'Kentucky', 'icon': pizzaMarker}],
-                    [[-34.604813, -58.392116], {'title': 'La Continental', 'icon': pizzaMarker}],
-                    [[-34.606714, -58.392295], {'title': 'La Continental', 'icon': pizzaMarker}],
-                    [[-34.604038, -58.385837], {'title': 'Pizzería Güerrin', 'icon': pizzaMarker}],
-                    [[-34.603914, -58.386147], {'title': 'Los inmortales', 'icon': pizzaMarker}],
+                    [[-34.604302, -58.388174], {'title': 'Kentucky'}],
+                    [[-34.604813, -58.392116], {'title': 'La Continental'}],
+                    [[-34.606714, -58.392295], {'title': 'La Continental'}],
+                    [[-34.604038, -58.385837], {'title': 'Pizzería Güerrin'}],
+                    [[-34.603914, -58.386147], {'title': 'Los inmortales'}],
 
-                    [[-34.603719, -58.389494], {'title': 'Sattva', 'icon': otherPlaceMarker}],
-                    [[-34.603712, -58.390776], {'title': 'Tataki Restaurante', 'icon': otherPlaceMarker}],
-                    [[-34.604384, -58.394086], {'title': 'Green Life', 'icon': otherPlaceMarker}],
+                    [[-34.603719, -58.389494], {'title': 'Sattva'}],
+                    [[-34.603712, -58.390776], {'title': 'Tataki Restaurante'}],
+                    [[-34.604384, -58.394086], {'title': 'Green Life'}],
 
-                    [[-34.604537, -58.382219], {'title': 'Starbucks', 'icon': coffeePlaceMarker}],
-                    [[-34.604116, -58.389269], {'title': 'La Paz', 'icon': coffeePlaceMarker}],
-                    [[-34.603401, -58.386496], {'title': 'Café Martínez', 'icon': coffeePlaceMarker}],
-                    [[-34.603056, -58.386319], {'title': 'Cafetería Uruguay', 'icon': coffeePlaceMarker}],
+                    [[-34.604537, -58.382219], {'title': 'Starbucks'}],
+                    [[-34.604116, -58.389269], {'title': 'La Paz'}],
+                    [[-34.603401, -58.386496], {'title': 'Café Martínez'}],
+                    [[-34.603056, -58.386319], {'title': 'Cafetería Uruguay'}],
                 ];
 
                 for (var i = 0; i < restaurantsMakers.length; i++) {
