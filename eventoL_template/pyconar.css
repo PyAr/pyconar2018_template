@@ -113,7 +113,17 @@ background: linear-gradient(to right, #aac6e8 0%,#4495d1 100%);
     font-family: comfortaa;font-size: 18pt;letter-spacing: 5px;
     background: #fff;opacity: .8; margin: 0;margin-bottom: 30px;padding: 10px;
 }
-#portada .fecha{border: 2px solid; max-width: 400px;border-radius: 15px;background: rgba(255,255,255,.5);}
+#portada .fecha{
+	border: 2px solid; 
+	max-width: 400px;
+	border-radius: 15px;
+	background: rgba(255,255,255,.5); 
+	height: 70px;
+	position: absolute;
+    left: 50%;
+	margin-left: -200px;
+	z-index: 10;
+}
 .social-icons {margin-top:50px;}
 .social-icons a{color:#ffff; font-size: 24pt; margin:20px;}
 #cielo-bg{	position: fixed;top: 0;	min-height:calc( 100vh - 60px);	}

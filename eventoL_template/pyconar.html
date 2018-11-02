@@ -613,7 +613,9 @@
                             </a>
                             <div class="fecha fecha margin-auto small-padding text-color-1 glow">
                                 <h3 class="margin-none"><i class="fa fa-calendar"></i> 22, 23, 24 de Noviembre de 2018</h3>
-                                <h4 class="margin-none">Dentro de 2 meses</h4>
+                                <h4 class="margin-none">
+                                    <span id="cuenta-regresiva"></span>
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -915,6 +917,16 @@
         $('#directions-bike').attr('href',
             'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
             event_place.geometry.location.lng + '&dirflg=b');
+
+        var ahora = new Date();
+        if(ahora < new Date(2018, 10, 22)) {
+            var dias = Math.round((new Date(2018, 10, 22) - new Date())/(1000*60*60*24)) + 1;
+            $('#cuenta-regresiva').html('Faltan ' + dias + ' días')
+        } else if (ahora < new Date(2018, 10, 25)) {
+            $('#cuenta-regresiva').html('¡Es ahora!')
+        } else {
+            $('#cuenta-regresiva').html('Te esperamos en la próxima')
+        }
         });
     </script>
     {% endblock %}
