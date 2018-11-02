@@ -617,7 +617,9 @@
                             </a>
                             <div class="fecha fecha margin-auto small-padding text-color-1 glow">
                                 <h3 class="margin-none"><i class="fa fa-calendar"></i> 22, 23, 24 de Noviembre de 2018</h3>
-                                <h4 class="margin-none">Dentro de 2 meses</h4>
+                                <h4 class="margin-none">
+                                    <span id="cuenta-regresiva"></span>
+                                </h4>
                             </div>
                         </div>
                     </div>
@@ -743,13 +745,45 @@
                             {% endif %}
                         </div>
                     </div>            
-            
-                    
                 </div>
             
-                <div class="viboras full-width relative big-margin"></div>
-            
-                <div class="relative full-width big-padding center color-white">
+                <div class="triangle-up-color-white relative"></div>
+                <div class="relative full-width color-white small-padding center clear glow">
+                    <div class="margin-auto max-w-800">
+                        <h1 class="titulo text-color-1 inline-block">Te puede interesar...</h1>
+
+                        <div class="remeras">
+                            <h2 class="subtitulo text-color-2">Remeras</h2>
+                            <div class="center">
+                                <img src="https://lh3.googleusercontent.com/LR78A9PBtNW9fwxmYwNEX4HVhoTgDWFHYaEx7TVORBjQqhLFYN8z9molPO_Z5yc2WRBNKmgGSg=w1000">
+                            </div>
+                            <div>
+                                ¿Querés tu remera de PyConAr 2018? Completá <a href="http://bit.ly/remeras-pyconar">este formulario</a>
+                            </div>
+                        </div>
+
+                        <div class="serpentario">
+                            <h2 class="subtitulo text-color-2">Serpentario</h2>
+                            <div>
+                                ¡No dejes de venir y participar en la conferencia porque tenés que cuidar a algún pequeñe!
+                                La conferencia cuenta con servicio de cuidado de niñes. Si te interesa hacé click <a href="http://bit.ly/serpentario-pyconar2018">acá</a>
+                            </div>
+                        </div>
+
+                        <div class="becas">
+                                <h2 class="subtitulo text-color-2">Becas</h2>
+                                <div>
+                                    Este año la conferencia cuenta con ayuda económica para facilitar la participación de toda la comunidad.
+                                    Si te interesa podés leer mas información acá: <a href="http://bit.ly/becas-pyconar2018">acá</a>
+                                </div>
+                            </div>
+                    </div>
+                </div>
+                <div class="triangle-down-color-white-reverse relative"></div>
+                <div class="big-margin"></div>
+
+                
+                <div class="relative full-width big-padding center color-2">
                     <div class="margin-auto max-w-800">
                         <h1 class="titulo text-color-1 inline-block">Django Girls</h1>
                         <p class="subtitulo text-color-1 inline-block">La registración al Django Girls que sucederá el jueves
@@ -758,7 +792,7 @@
                         <p><img class="shadow" alt="" src="https://pyconar2018.blob.core.windows.net/pyconar-static/template-800x800-inscripcionesabiertas.svg.png" style="height:50%; width:90%"></p>
                     </div>
                 </div>
-                <div class="triangle-down-color-white relative"></div>
+                <div class="triangle-down-color-2 relative"></div>
             
             
                 
@@ -1445,6 +1479,16 @@
             $('#directions-bike').attr('href',
                 'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
                 event_place.geometry.location.lng + '&dirflg=b');
+            
+            var ahora = new Date();
+            if(ahora < new Date(2018, 10, 22)) {
+                var dias = Math.round((new Date(2018, 10, 22) - new Date())/(1000*60*60*24)) + 1;
+                $('#cuenta-regresiva').html('Faltan ' + dias + ' días')
+            } else if (ahora < new Date(2018, 10, 25)) {
+                $('#cuenta-regresiva').html('¡Es ahora!')
+            } else {
+                $('#cuenta-regresiva').html('Te esperamos en la próxima')
+            }
         });
     </script>
  
