@@ -1093,6 +1093,44 @@
                 </div>
             </div>
 
+            <div class="big-padding">
+                <div class="relative max-w-1200 margin-auto color-white big-padding medium-margin glow border-bottom border-color-2">
+                    <h2 class="center titulo text-color-1">¿Donde almorzar?</h2>
+                    <br>
+                    <div class="columnas-1 left-align">
+                        <p>Dentro de las salas del Centro Cultural no se puede llevar bebidas ni comida,
+                           pero si se puede tomar y beber en el hall. Una lista de lugares a donde salir a
+                           almorzar los días del evento:
+
+                        <ul>
+                            <li>Burger King: Av. Corrientes 1770. 3 cuadras. Hamburguesas.</li>
+                            <li>Mc Donalds: Av Callao 131. 4,5 cuadras. Hamburguesas.</li>
+                            <li>Mc Donalds: Av. Corrientes 992/6. 6 cuadras. Hamburguesas.</li>
+                            <li>Dellepiane Bar: Luis Dellepiane 685. 6 cuadras. Hamburguesas.</li>
+
+                            <li>Sattva: Montevideo 446. 2 cuadras. Restaurante. Cuenta con opciones vegetarianas</li>
+                            <li>Tataki Restaurante: Rodríguez Peña 433. 3 cuadras. Restaurante de comida peruana</li>
+                            <li>Green life: Av. Corrientes 1915. 5 cuadras. Restaurante. Cuenta con opciones vegetariana</li>
+                            
+                            <li>Kentucky: Av. Corrientes 1502. 2 cuadras. Pizzeria</li>
+                            <li>La Continental: Av. Callao 361. 3 cuadras. Pizzeria</li>
+                            <li>La Continental: Av. Callao 202. 3 cuadras. Pizzeria</li>
+                            <li>Pizzería Güerrin: Av. Corrientes 1368. 3 cuadras. Pizzeria</li>
+                            <li>Los Inmortales: Av. Corrientes 1369. 3 cuadras. Pizzeria</li>
+                            
+                            <li>Starbucks: Cerrito 336. 5 cuadras. Cafe</li>
+                            <li>La Paz: Av. Corrientes 1593. 2 cuadras. Cafe</li>
+                            <li>Café Martínez: Uruguay 463. 3 cuadras. Cafe</li>
+                            <li>Cafetería Uruguay: Uruguay 485. 3 cuadras. Cafe</li>
+
+                        </ul>
+
+
+                        <div id="map-lunch" class="map"></div>                        
+                    </div>
+                </div>
+            </div>
+
 
             
             <div class="separador-front color-1 full-width"></div><!-- un margen para que se vea el logo, esto va solo en la front -->
@@ -1334,7 +1372,62 @@
                 }
             }
             createActivitiesMap();
-    
+
+
+            function createLunchMap() {
+                var lunchMap =  map('map-lunch', event_place.geometry.location.lat, event_place.geometry.location.lng);
+                L.AwesomeMarkers.Icon.prototype.options.prefix = 'fa';
+                
+                var hamburgerMarker = L.AwesomeMarkers.icon({
+                    icon: 'utensils',
+                    markerColor: 'red' 
+                });
+
+                var pizzaMarker = L.AwesomeMarkers.icon({
+                    icon: 'utensils',
+                    markerColor: 'green' 
+                });
+
+                var otherPlaceMarker = L.AwesomeMarkers.icon({
+                    icon: 'utensils',
+                    markerColor: 'orange' 
+                });
+
+                var coffeePlaceMarker = L.AwesomeMarkers.icon({
+                    icon: 'coffee',
+                    markerColor: 'purple' 
+                });
+
+                var restaurantsMakers = [
+                    [[-34.604431, -58.391874], {'title': 'Burger King', 'icon': hamburgerMarker}],
+                    [[-34.607628, -58.391906], {'title': 'Mc Donalds', 'icon': hamburgerMarker}],
+                    [[-34.603742, -58.380287], {'title': 'Mc Donalds', 'icon': hamburgerMarker}],
+                    [[-34.600951, -58.390930], {'title': 'Dellepiane Bar', 'icon': hamburgerMarker}],
+
+                    [[-34.604302, -58.388174], {'title': 'Kentucky', 'icon': pizzaMarker}],
+                    [[-34.604813, -58.392116], {'title': 'La Continental', 'icon': pizzaMarker}],
+                    [[-34.606714, -58.392295], {'title': 'La Continental', 'icon': pizzaMarker}],
+                    [[-34.604038, -58.385837], {'title': 'Pizzería Güerrin', 'icon': pizzaMarker}],
+                    [[-34.603914, -58.386147], {'title': 'Los inmortales', 'icon': pizzaMarker}],
+
+                    [[-34.603719, -58.389494], {'title': 'Sattva', 'icon': otherPlaceMarker}],
+                    [[-34.603712, -58.390776], {'title': 'Tataki Restaurante', 'icon': otherPlaceMarker}],
+                    [[-34.604384, -58.394086], {'title': 'Green Life', 'icon': otherPlaceMarker}],
+
+                    [[-34.604537, -58.382219], {'title': 'Starbucks', 'icon': coffeePlaceMarker}],
+                    [[-34.604116, -58.389269], {'title': 'La Paz', 'icon': coffeePlaceMarker}],
+                    [[-34.603401, -58.386496], {'title': 'Café Martínez', 'icon': coffeePlaceMarker}],
+                    [[-34.603056, -58.386319], {'title': 'Cafetería Uruguay', 'icon': coffeePlaceMarker}],
+                ];
+
+                for (var i = 0; i < restaurantsMakers.length; i++) {
+                    var markerInfo = restaurantsMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(lunchMap);
+                }
+            }
+            createLunchMap();
+
+
             $('#address1').html(event_place.formatted_address);
     
             $('#directions-car').attr('href',
