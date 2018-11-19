@@ -1139,21 +1139,29 @@
                             <li>Mc Donalds: Av Callao 131. 4,5 cuadras. Hamburguesas.</li>
                             <li>Mc Donalds: Av. Corrientes 992/6. 6 cuadras. Hamburguesas.</li>
                             <li>Dellepiane Bar: Luis Dellepiane 685. 6 cuadras. Hamburguesas.</li>
+                            <li>El Palacio de la Papa Frita: Av. Corrientes 1612. Hamburguesas.</li>
 
                             <li>Sattva: Montevideo 446. 2 cuadras. Restaurante. Cuenta con opciones vegetarianas</li>
                             <li>Tataki Restaurante: Rodríguez Peña 433. 3 cuadras. Restaurante de comida peruana</li>
                             <li>Green life: Av. Corrientes 1915. 5 cuadras. Restaurante. Cuenta con opciones vegetariana</li>
+                            <li>Parrilla Peña: Rodríguez Peña 682. 5 cuadras. Restaurante</li>
                             
                             <li>Kentucky: Av. Corrientes 1502. 2 cuadras. Pizzeria</li>
                             <li>La Continental: Av. Callao 361. 3 cuadras. Pizzeria</li>
                             <li>La Continental: Av. Callao 202. 3 cuadras. Pizzeria</li>
                             <li>Pizzería Güerrin: Av. Corrientes 1368. 3 cuadras. Pizzeria</li>
                             <li>Los Inmortales: Av. Corrientes 1369. 3 cuadras. Pizzeria</li>
+                            <li>La Americana: Av. Corrientes 1383. 3 cuadras. Pizzeria</li>
+                            <li>Banchero: Av. Corrientes 1300. 4 cuadras. Pizzeria</li>
                             
                             <li>Starbucks: Cerrito 336. 5 cuadras. Cafe</li>
                             <li>La Paz: Av. Corrientes 1593. 2 cuadras. Cafe</li>
                             <li>Café Martínez: Uruguay 463. 3 cuadras. Cafe</li>
                             <li>Cafetería Uruguay: Uruguay 485. 3 cuadras. Cafe</li>
+                            
+                            <li>La Birreria: Sarmiento 1635. 1 cuadra. Bar</li>
+                            <li>Covo Birreria: Montevideo 382. 2 cuadras. Bar</li>
+                            <li>Dellepiane Bar: Luis Dellepiane 685. 5 cuadras. Bar</li>
 
                         </ul>
 
@@ -1375,39 +1383,6 @@
             createActivitiesMap();
 
 
-            function createLunchMap() {
-                var lunchMap =  map('map-lunch', event_place.geometry.location.lat, event_place.geometry.location.lng);
-                
-                var restaurantsMakers = [
-                    [[-34.604431, -58.391874], {'title': 'Burger King'}],
-                    [[-34.607628, -58.391906], {'title': 'Mc Donalds'}],
-                    [[-34.603742, -58.380287], {'title': 'Mc Donalds'}],
-                    [[-34.600951, -58.390930], {'title': 'Dellepiane Bar'}],
-
-                    [[-34.604302, -58.388174], {'title': 'Kentucky'}],
-                    [[-34.604813, -58.392116], {'title': 'La Continental'}],
-                    [[-34.606714, -58.392295], {'title': 'La Continental'}],
-                    [[-34.604038, -58.385837], {'title': 'Pizzería Güerrin'}],
-                    [[-34.603914, -58.386147], {'title': 'Los inmortales'}],
-
-                    [[-34.603719, -58.389494], {'title': 'Sattva'}],
-                    [[-34.603712, -58.390776], {'title': 'Tataki Restaurante'}],
-                    [[-34.604384, -58.394086], {'title': 'Green Life'}],
-
-                    [[-34.604537, -58.382219], {'title': 'Starbucks'}],
-                    [[-34.604116, -58.389269], {'title': 'La Paz'}],
-                    [[-34.603401, -58.386496], {'title': 'Café Martínez'}],
-                    [[-34.603056, -58.386319], {'title': 'Cafetería Uruguay'}],
-                ];
-
-                for (var i = 0; i < restaurantsMakers.length; i++) {
-                    var markerInfo = restaurantsMakers[i];
-                    L.marker(markerInfo[0], markerInfo[1]).addTo(lunchMap);
-                }
-            }
-            createLunchMap();
-
-
             $('#address1').html(event_place.formatted_address);
     
             $('#directions-car').attr('href',
@@ -1435,6 +1410,48 @@
             } else {
                 $('#cuenta-regresiva').html('Te esperamos en la próxima')
             }
+
+
+            function createLunchMap() {
+                var lunchMap =  map('map-lunch', event_place.geometry.location.lat, event_place.geometry.location.lng);
+                
+                var restaurantsMakers = [
+                    [[-34.604431, -58.391874], {'title': 'Burger King'}],
+                    [[-34.607628, -58.391906], {'title': 'Mc Donalds'}],
+                    [[-34.603742, -58.380287], {'title': 'Mc Donalds'}],
+                    [[-34.600951, -58.390930], {'title': 'Dellepiane Bar'}],
+                    [[-34.604358, -58.389602], {'title': 'El Palacio de la Papa Frita'}],
+
+                    [[-34.604302, -58.388174], {'title': 'Kentucky'}],
+                    [[-34.604813, -58.392116], {'title': 'La Continental'}],
+                    [[-34.606714, -58.392295], {'title': 'La Continental'}],
+                    [[-34.604038, -58.385837], {'title': 'Pizzería Güerrin'}],
+                    [[-34.603914, -58.386147], {'title': 'Los inmortales'}],
+                    [[-34.604001, -58.384952], {'title': 'Banchero'}],
+                    [[-34.603800, -58.386295], {'title': 'La Americana'}],
+
+                    [[-34.603719, -58.389494], {'title': 'Sattva'}],
+                    [[-34.603712, -58.390776], {'title': 'Tataki Restaurante'}],
+                    [[-34.604384, -58.394086], {'title': 'Green Life'}],
+                    [[-34.601030, -58.391614], {'title': 'Parrilla Peña'}],
+
+                    [[-34.604537, -58.382219], {'title': 'Starbucks'}],
+                    [[-34.604116, -58.389269], {'title': 'La Paz'}],
+                    [[-34.603401, -58.386496], {'title': 'Café Martínez'}],
+                    [[-34.603056, -58.386319], {'title': 'Cafetería Uruguay'}],
+                    
+                    [[-34.600960, -58.390918], {'title': 'Dellepiane Bar'}],
+                    [[-34.605322, -58.389884], {'title': 'La Birreria'}],
+                    [[-34.604439, -58.389498], {'title': 'Covo Birreria'}]
+                ];
+
+                for (var i = 0; i < restaurantsMakers.length; i++) {
+                    var markerInfo = restaurantsMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(lunchMap);
+                }
+            }
+            createLunchMap();
+
         });
     </script>
  
