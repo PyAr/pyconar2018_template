@@ -106,6 +106,13 @@ body {
 
 .triangle-down-color-white,.triangle-down-color-1,.triangle-down-color-2{width: 0;height: 0;border-right: 98vw solid transparent;}
 .triangle-up-color-white,.triangle-up-color-1,.triangle-up-color-2{	width: 0;height: 0; border-left: 98vw solid transparent;float: right;}
+.triangle-up-color-white-2 { 
+	width: 0;
+	height: 0;
+	border-right: 100vw solid transparent;
+	float: left;
+	border-bottom: 100px solid #fff;
+ }
 
 /*portada*/
 #portada{min-height:calc( 100vh - 70px);overflow: hidden;}
