@@ -1,0 +1,1804 @@
+{% load staticfiles %}
+{% load filters %}
+{% load i18n %}
+{% load l10n %}
+{% load cropping %}
+{% load account %}
+
+{% user_display user as user_display %}
+<!DOCTYPE html>
+<html lang="es-AR">
+
+<head>
+    {% block head %}
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if event is not None %}
+    <meta name="description" content="EventoL - {{ event.name }}. Event Management Software">
+    <title>EventoL - {{ event.name }}</title>
+    {% else %}
+    <meta name="description" content="Event Management Software">
+    <title>EventoL</title>
+    {% endif %}
+
+    <link rel="shortcut icon" type="image/png" href="{% static "favicon.ico" %}" />
+    <link rel="stylesheet" type="text/css" media="all" href="{% static "manager/css/eventol-bootstrap.css" %}" />
+    <link rel="stylesheet" type="text/css" media="all" href="{% static "manager/css/eventol.css" %}" />
+    {% if event.css_custom %}
+    <link rel="stylesheet" type="text/css" media="all" href="{{ event.css_custom.url }}" />
+    {% endif %}
+    <script src="{% static "manager/bower_components/jquery/dist/jquery.min.js" %}"></script>
+    <script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
+
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/icon?family=Material+Icons">
+
+    {% block other-head %}
+    <link rel="stylesheet" type="text/css" href="{% static "manager/bower_components/slick-carousel/slick/slick.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "manager/bower_components/slick-carousel/slick/slick-theme.css" %}" />
+
+    <link rel="stylesheet" href="{% static "manager/bower_components/leaflet/dist/leaflet.css" %}" />
+    <!--[if lte IE 8]><link rel="stylesheet" href="https://cdn.leafletjs.com/leaflet-0.7.7/leaflet.ie.css" /><![endif]-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Comfortaa:400,700" rel="stylesheet">
+
+    <style>
+        .slick-prev:before,
+        .slick-next:before {
+            color: black;
+        }
+
+        .map {
+            height: 300px;
+            width: 100%;
+        }
+    </style>
+    {% endblock %}
+    {% endblock %}
+</head>
+
+<body>
+    {% block navbar %}
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top color-1 glow">
+        <div class="">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="pull-left" href="/">
+                    {% if EVENTOL_SETTINGS.logo_header %}
+                    <img class="img-responsive eventol-logo" src="{{ EVENTOL_SETTINGS.logo_header.url }}" alt="EventoL Logo">
+                    {% else %}
+                    <img class="img-responsive eventol-logo" src="{% static "manager/img/eventol-white.png" %}" alt="EventoL Logo">
+                    {% endif %}
+                </a>
+            </div>
+            <div id="navbar" class="collapse navbar-collapse color-1 glow">
+                {% block navbar-menu %}
+                <ul class="nav navbar-nav navbar-right">
+                    {% if user.is_authenticated and event_slug is None %}
+                    <li>
+                        <a href="{% url "create_event" %}" class="btn btn-raised btn-warning" style="padding:0.6em; margin:1em; font-family: Roboto;">
+                            {% trans "Create event" %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if event_slug is not None %}
+                    {% if user.is_authenticated and user|is_organizer:event_slug %}
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-cogs"></i> {% trans "Manage event" %} <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url "edit_event" event_slug %}">
+                                    <i class="fa fa-cogs"></i> {% trans "Edit event" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url "event_add_image" event_slug %}">
+                                    <i class="fa fa-cogs"></i> {% trans "Edit image" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% if not user.is_authenticated or not user|is_registered_any_way:event_slug %}
+                    <li>
+                        <a title="Register to this event" href="{% url "attendee_registration" event_slug %}">{% trans "Check in" %}</a>
+                    </li>
+                    {% endif %}
+                    {% if event.activity_proposal_is_open and event.use_proposals %}
+                    <li>
+                        <a href="{% url "activity_proposal" event_slug %}">
+                            {% trans "Submit your talk" %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user|is_speaker:event_slug %}
+                    <li>
+                        <a href="{% url "my_proposals" event_slug %}">{% trans "My Proposals" %}</a>
+                    </li>
+                    {% endif %}
+                    {% if user.is_authenticated and user|is_registered:event_slug %}
+                    <li>
+                        <a href="{% url "view_ticket" event_slug %}">{% trans "View my Ticket" %}</a>
+                    </li>
+                    {% endif %}
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-th"></i> {% trans "Event" context "navbar" %} <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if event.use_schedule %}
+                            <li>
+                                <a href="{% url "schedule" event_slug %}">
+                                    <i class="fa fa-calendar"></i> <i class="fa pythofa-calendar"></i> {% trans "Schedule" %}
+                                </a>
+                            </li>
+                            {% if user.is_authenticated and user|is_organizer:event_slug %}
+                            <li>
+                                <a href="{% url "rooms_list" event_slug %}">
+                                    <i class="fa fa-th"></i> {% trans "Manage Rooms" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+                            {% if not PRIVATE_ACTIVITIES or user|is_collaborator:event_slug  %}
+                            <li>
+                                <a href="{% url "activities" event_slug %}">
+                                    <i class="fa fa-th"></i> {% trans "View Activities" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <a href="{% url "reports" event_slug %}">
+                                    <i class="fa fa-bar-chart"></i> {% trans "View Reports" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown">
+                            <i class="fa fa-group"></i> {% trans "Collaborators" %} <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if event.use_collaborators %}
+                            {% if not user.is_authenticated or not user|is_collaborator:event_slug %}
+                            <li>
+                                <a href="{% url "collaborator_registration" event_slug %}">
+                                    <i class="fa fa-pencil-square-o"></i> {% trans "Register as a Collaborator" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+                            {% if event.use_installers %}
+                            {% if not user.is_authenticated or not user|is_installer:event_slug %}
+                            <li>
+                                <a href="{% url "installer_registration" event_slug %}">
+                                    <i class="fa fa-linux"></i> {% trans "Register as an Installer" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+                            {% if user.is_authenticated %}
+                            {% if user|can_take_attendance:event_slug %}
+                            <li>
+                                <a href="{% url "manage_attendance" event_slug %}">
+                                    <i class="fa fa-check-square-o"></i> {% trans "Manage Attendance" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url "attendee_registration_print_code" event_slug %}">
+                                    <i class="fa fa-check-square-o"></i> {% trans "Print self-registration code" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a target="_blank" href="{% url "attendance_by_autoreadqr" event_slug %}">
+                                    <i class="fa fa-check-square-o"></i> {% trans "Open auto-read QR code page" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if event.use_installations and user|is_installer:event_slug %}
+                            <li>
+                                <a href="{% url "installation" event_slug %}">
+                                    <i class="fa fa-laptop"></i> {% trans "Submit an installation" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if user|is_organizer:event_slug %}
+                            <!--
+                                        <li>
+                                            <a href="{% url "draw" event_slug %}">
+                                                <i class="fa fa-gift"></i> {% trans "Draw" %}
+                                            </a>
+                                        </li>
+                                        -->
+                            <li>
+                                <a href="{% url "add_organizer" event_slug %}">
+                                    <i class="fa fa-check-square-o"></i> {% trans "Manage Organizers" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url "add_registration_people" event_slug %}">
+                                    <i class="fa fa-pencil-square-o"></i> {% trans "Manage Registration People" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% endif %}
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-at"></i> {% trans "Follow Us!" %} <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            {% for contact in contacts %}
+                            <li><a href="{{ contact|get_contact_url }}" target="_blank">
+                                    <i class="fa {{ contact.type.icon_class }}"></i> {{ contact.text }}</a>
+                            </li>
+                            {% endfor %}
+                            <li><a href="{% url "contact" event_slug %}">
+                                    <i class="fa fa-envelope"></i> {% trans "Contact Us!" %}</a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                    {% get_available_languages as languages %}
+                    {% if languages %}
+                    <!-- language dropdown start-->
+                    <li class="dropdown">
+                        <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                            <span class="vertical-middle">
+                                <i class="fa fa-globe"></i>
+                            </span>
+                            {% trans "Languages" %}
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for lang_code, lang in languages %}
+                            <li>
+                                <a href="#" onclick="return change_lang('{{ lang_code }}');">
+                                    <i class="fa fa-flag"></i> {{ lang|title }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <!-- language.dropdown end -->
+                    {% endif %}
+                    {% if not user.is_authenticated %}
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown">{% trans "Organizadores" %} <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url "account_login" %}">
+                                    <i class="material-icons">account_box</i> {% trans "Login" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="dropdown">
+                        <a href="#" data-target="#" class="dropdown-toggle" data-toggle="dropdown"><i class="material-icons">account_box</i> {{ user_display }}<b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a href="{% url "user_profile" %}">
+                                    <i class="material-icons">assignment_ind</i> {% trans "Profile" %}
+                                </a>
+                            </li>
+                            {% if not user.has_usable_password %}
+                            <li>
+                                <a href="{% url "account_set_password" %}">
+                                    <i class="material-icons">vpn_key</i> {% trans "Set Password" %}
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li>
+                                <a href="{% url "account_change_password" %}">
+                                    <i class="material-icons">autorenew</i> {% trans "Change Password" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url "account_logout" %}">
+                                    <i class="material-icons">power_settings_new</i> {% trans "Logout" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+                {% endblock navbar-menu %}
+                {% block extra-nav %}{% endblock %}
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
+
+    <div class="container-fluid color-1">
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{% ifequal message.tags 'error' %}danger{% else %}{{ message.tags }}{% endifequal %} alert-dismissible text-center" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% block main-content %}
+        <div>
+            {% block content %}
+            <div id="portada" class="color-2 relative">
+                <svg id="cielo-bg" class="full-width" xmlns="http://www.w3.org/2000/svg" width="1440" height="900">
+                    <path d="M839,421L947,412L778,237Z" />
+                    <path d="M947,412L999,242L778,237Z" />
+                    <path d="M999,242L921,146L778,237Z" />
+                    <path d="M778,237L686,329L839,421Z" />
+                    <path d="M999,242L1090,142L921,146Z" />
+                    <path d="M947,412L1090,254L999,242Z" />
+                    <path d="M778,237L694,54L686,329Z" />
+                    <path d="M921,146L781,103L778,237Z" />
+                    <path d="M1090,254L1090,142L999,242Z" />
+                    <path d="M921,146L807,-37L781,103Z" />
+                    <path d="M781,103L694,54L778,237Z" />
+                    <path d="M807,-37L694,54L781,103Z" />
+                    <path d="M947,412L1174,448L1090,254Z" />
+                    <path d="M1090,254L1288,114L1090,142Z" />
+                    <path d="M1124,595L1174,448L947,412Z" />
+                    <path d="M686,329L585,461L839,421Z" />
+                    <path d="M839,421L1002,657L947,412Z" />
+                    <path d="M504,458L585,461L686,329Z" />
+                    <path d="M1003,-80L807,-37L921,146Z" />
+                    <path d="M771,673L1002,657L839,421Z" />
+                    <path d="M1002,657L1124,595L947,412Z" />
+                    <path d="M611,592L771,673L839,421Z" />
+                    <path d="M585,461L611,592L839,421Z" />
+                    <path d="M1090,142L1003,-80L921,146Z" />
+                    <path d="M585,461L521,567L611,592Z" />
+                    <path d="M408,309L504,458L686,329Z" />
+                    <path d="M1090,142L1211,-51L1003,-80Z" />
+                    <path d="M1357,255L1288,114L1090,254Z" />
+                    <path d="M1357,255L1090,254L1174,448Z" />
+                    <path d="M678,780L753,799L771,673Z" />
+                    <path d="M504,458L521,567L585,461Z" />
+                    <path d="M321,668L455,732L521,567Z" />
+                    <path d="M426,61L408,309L686,329Z" />
+                    <path d="M1381,406L1357,255L1174,448Z" />
+                    <path d="M753,799L940,779L771,673Z" />
+                    <path d="M771,673L940,779L1002,657Z" />
+                    <path d="M1002,657L1169,759L1124,595Z" />
+                    <path d="M1288,114L1211,-51L1090,142Z" />
+                    <path d="M1143,-217L1211,-51L1329,-207Z" />
+                    <path d="M694,54L426,61L686,329Z" />
+                    <path d="M807,-37L622,-105L694,54Z" />
+                    <path d="M775,-237L622,-105L807,-37Z" />
+                    <path d="M1003,-80L998,-179L807,-37Z" />
+                    <path d="M1143,-217L998,-179L1003,-80Z" />
+                    <path d="M1371,561L1174,448L1124,595Z" />
+                    <path d="M1371,561L1381,406L1174,448Z" />
+                    <path d="M678,780L771,673L611,592Z" />
+                    <path d="M479,-82L426,61L694,54Z" />
+                    <path d="M455,732L678,780L611,592Z" />
+                    <path d="M940,779L1169,759L1002,657Z" />
+                    <path d="M1134,941L1169,759L940,779Z" />
+                    <path d="M1299,731L1371,561L1124,595Z" />
+                    <path d="M998,-179L775,-237L807,-37Z" />
+                    <path d="M622,-105L479,-82L694,54Z" />
+                    <path d="M489,-201L479,-82L622,-105Z" />
+                    <path d="M998,-179L1143,-217L775,-237Z" />
+                    <path d="M1211,-51L1143,-217L1003,-80Z" />
+                    <path d="M1340,-92L1211,-51L1288,114Z" />
+                    <path d="M1169,759L1299,731L1124,595Z" />
+                    <path d="M1541,154L1340,-92L1288,114Z" />
+                    <path d="M1541,154L1288,114L1357,255Z" />
+                    <path d="M521,567L455,732L611,592Z" />
+                    <path d="M751,983L977,957L753,799Z" />
+                    <path d="M321,668L521,567L504,458Z" />
+                    <path d="M408,309L262,431L504,458Z" />
+                    <path d="M246,219L262,431L408,309Z" />
+                    <path d="M246,219L408,309L426,61Z" />
+                    <path d="M256,107L246,219L426,61Z" />
+                    <path d="M580,-277L489,-201L622,-105Z" />
+                    <path d="M256,107L426,61L318,-33Z" />
+                    <path d="M1381,406L1534,247L1357,255Z" />
+                    <path d="M1552,472L1534,247L1381,406Z" />
+                    <path d="M1552,472L1381,406L1371,561Z" />
+                    <path d="M1529,-276L580,-277L775,-237Z" />
+                    <path d="M775,-237L580,-277L622,-105Z" />
+                    <path d="M318,-33L426,61L479,-82Z" />
+                    <path d="M489,-201L318,-33L479,-82Z" />
+                    <path d="M1169,759L1274,976L1299,731Z" />
+                    <path d="M753,799L977,957L940,779Z" />
+                    <path d="M751,983L753,799L678,780Z" />
+                    <path d="M262,431L321,668L504,458Z" />
+                    <path d="M1534,247L1541,154L1357,255Z" />
+                    <path d="M1448,-123L1329,-207L1340,-92Z" />
+                    <path d="M1340,-92L1329,-207L1211,-51Z" />
+                    <path d="M1143,-217L1529,-276L775,-237Z" />
+                    <path d="M977,957L1134,941L940,779Z" />
+                    <path d="M1465,686L1552,472L1371,561Z" />
+                    <path d="M1534,247L1625,222L1541,154Z" />
+                    <path d="M1465,686L1371,561L1299,731Z" />
+                    <path d="M572,958L678,780L455,732Z" />
+                    <path d="M572,958L751,983L678,780Z" />
+                    <path d="M1199,1093L1274,976L1134,941Z" />
+                    <path d="M1536,822L1465,686L1299,731Z" />
+                    <path d="M1541,154L1448,-123L1340,-92Z" />
+                    <path d="M463,982L572,958L455,732Z" />
+                    <path d="M1654,467L1625,222L1534,247Z" />
+                    <path d="M1541,154L1625,114L1448,-123Z" />
+                    <path d="M321,668L260,733L455,732Z" />
+                    <path d="M85,583L260,733L321,668Z" />
+                    <path d="M85,583L321,668L262,431Z" />
+                    <path d="M246,219L122,229L262,431Z" />
+                    <path d="M94,156L122,229L246,219Z" />
+                    <path d="M94,156L246,219L256,107Z" />
+                    <path d="M1625,222L1625,114L1541,154Z" />
+                    <path d="M1134,941L1274,976L1169,759Z" />
+                    <path d="M1199,1093L1134,941L977,957Z" />
+                    <path d="M1824,90L1653,-94L1625,114Z" />
+                    <path d="M1552,472L1654,467L1534,247Z" />
+                    <path d="M1645,619L1654,467L1552,472Z" />
+                    <path d="M1645,619L1552,472L1465,686Z" />
+                    <path d="M324,905L463,982L455,732Z" />
+                    <path d="M572,958L665,1097L751,983Z" />
+                    <path d="M122,229L64,388L262,431Z" />
+                    <path d="M119,-28L94,156L256,107Z" />
+                    <path d="M119,-28L256,107L318,-33Z" />
+                    <path d="M489,-201L320,-285L318,-33Z" />
+                    <path d="M580,-277L320,-285L489,-201Z" />
+                    <path d="M260,733L324,905L455,732Z" />
+                    <path d="M751,983L831,1190L977,957Z" />
+                    <path d="M463,982L665,1097L572,958Z" />
+                    <path d="M455,1174L665,1097L463,982Z" />
+                    <path d="M4,235L64,388L122,229Z" />
+                    <path d="M260,733L174,845L324,905Z" />
+                    <path d="M1536,822L1645,619L1465,686Z" />
+                    <path d="M1488,936L1536,822L1299,731Z" />
+                    <path d="M113,-207L119,-28L318,-33Z" />
+                    <path d="M64,388L85,583L262,431Z" />
+                    <path d="M1274,976L1488,936L1299,731Z" />
+                    <path d="M914,1198L1199,1093L977,957Z" />
+                    <path d="M1625,114L1653,-94L1448,-123Z" />
+                    <path d="M1448,-123L1529,-276L1329,-207Z" />
+                    <path d="M1788,250L1625,114L1625,222Z" />
+                    <path d="M1653,-94L1529,-276L1448,-123Z" />
+                    <path d="M1329,-207L1529,-276L1143,-217Z" />
+                    <path d="M580,-277L1795,-304L320,-285Z" />
+                    <path d="M1536,822L1706,848L1645,619Z" />
+                    <path d="M1444,1089L1488,936L1274,976Z" />
+                    <path d="M-67,45L4,235L94,156Z" />
+                    <path d="M94,156L4,235L122,229Z" />
+                    <path d="M64,388L-85,408L85,583Z" />
+                    <path d="M665,1097L831,1190L751,983Z" />
+                    <path d="M302,1191L455,1174L463,982Z" />
+                    <path d="M665,1097L455,1174L831,1190Z" />
+                    <path d="M85,583L174,845L260,733Z" />
+                    <path d="M831,1190L914,1198L977,957Z" />
+                    <path d="M1654,467L1788,250L1625,222Z" />
+                    <path d="M1848,509L1788,250L1654,467Z" />
+                    <path d="M320,-285L113,-207L318,-33Z" />
+                    <path d="M119,-28L-67,45L94,156Z" />
+                    <path d="M1199,1093L1333,1123L1274,976Z" />
+                    <path d="M914,1198L1333,1123L1199,1093Z" />
+                    <path d="M1653,-94L1644,-251L1529,-276Z" />
+                    <path d="M1795,-304L1644,-251L1653,-94Z" />
+                    <path d="M1333,1123L1444,1089L1274,976Z" />
+                    <path d="M1488,936L1647,916L1536,822Z" />
+                    <path d="M1788,250L1824,90L1625,114Z" />
+                    <path d="M302,1191L463,982L324,905Z" />
+                    <path d="M831,1190L302,1191L914,1198Z" />
+                    <path d="M-13,778L115,934L174,845Z" />
+                    <path d="M4,235L-85,408L64,388Z" />
+                    <path d="M-211,403L-85,408L-276,258Z" />
+                    <path d="M1645,619L1848,509L1654,467Z" />
+                    <path d="M1788,250L1848,509L1824,90Z" />
+                    <path d="M1444,1089L1647,916L1488,936Z" />
+                    <path d="M-114,-48L-67,45L119,-28Z" />
+                    <path d="M1878,644L1848,509L1645,619Z" />
+                    <path d="M1647,916L1706,848L1536,822Z" />
+                    <path d="M174,845L115,934L324,905Z" />
+                    <path d="M-13,778L174,845L85,583Z" />
+                    <path d="M-85,408L-77,605L85,583Z" />
+                    <path d="M-77,605L-13,778L85,583Z" />
+                    <path d="M1706,848L1878,644L1645,619Z" />
+                    <path d="M1848,509L1866,-88L1824,90Z" />
+                    <path d="M1824,90L1866,-88L1653,-94Z" />
+                    <path d="M1878,644L1866,-88L1848,509Z" />
+                    <path d="M-276,258L-85,408L4,235Z" />
+                    <path d="M-85,408L-169,585L-77,605Z" />
+                    <path d="M113,-207L-114,-48L119,-28Z" />
+                    <path d="M115,934L302,1191L324,905Z" />
+                    <path d="M455,1174L302,1191L831,1190Z" />
+                    <path d="M67,1100L302,1191L115,934Z" />
+                    <path d="M-18,1007L67,1100L115,934Z" />
+                    <path d="M-77,605L-247,777L-13,778Z" />
+                    <path d="M-211,403L-169,585L-85,408Z" />
+                    <path d="M113,-207L-34,-286L-114,-48Z" />
+                    <path d="M320,-285L-34,-286L113,-207Z" />
+                    <path d="M1866,-88L1795,-304L1653,-94Z" />
+                    <path d="M1644,-251L1795,-304L1529,-276Z" />
+                    <path d="M1529,-276L1795,-304L580,-277Z" />
+                    <path d="M320,-285L1795,-304L-34,-286Z" />
+                    <path d="M-215,121L4,235L-67,45Z" />
+                    <path d="M-114,-48L-215,121L-67,45Z" />
+                    <path d="M-233,-128L-215,121L-114,-48Z" />
+                    <path d="M1878,644L1895,805L1866,-88Z" />
+                    <path d="M1706,848L1895,805L1878,644Z" />
+                    <path d="M1800,1031L1895,805L1706,848Z" />
+                    <path d="M1800,1031L1706,848L1647,916Z" />
+                    <path d="M-18,1007L115,934L-13,778Z" />
+                    <path d="M-247,777L-18,1007L-13,778Z" />
+                    <path d="M-215,121L-276,258L4,235Z" />
+                    <path d="M-211,403L-247,777L-169,585Z" />
+                    <path d="M-233,-128L-276,258L-215,121Z" />
+                    <path d="M-34,-286L-175,-192L-114,-48Z" />
+                    <path d="M1709,1172L1647,916L1444,1089Z" />
+                    <path d="M1709,1172L1800,1031L1647,916Z" />
+                    <path d="M-175,-192L-233,-128L-114,-48Z" />
+                    <path d="M914,1198L1709,1172L1333,1123Z" />
+                    <path d="M1333,1123L1709,1172L1444,1089Z" />
+                    <path d="M-169,585L-247,777L-77,605Z" />
+                    <path d="M-18,1007L-47,1188L67,1100Z" />
+                    <path d="M-276,258L-247,777L-211,403Z" />
+                    <path d="M1709,1172L1835,1087L1800,1031Z" />
+                    <path d="M1800,1031L1835,1087L1895,805Z" />
+                    <path d="M-239,1107L-47,1188L-18,1007Z" />
+                    <path d="M67,1100L-47,1188L302,1191Z" />
+                    <path d="M302,1191L-47,1188L914,1198Z" />
+                    <path d="M-276,258L-257,998L-247,777Z" />
+                    <path d="M-247,777L-257,998L-18,1007Z" />
+                    <path d="M-257,998L-239,1107L-18,1007Z" />
+                </svg>
+
+                <h2 class="text-color-1 center">10ma conferencia Argentina de Python</h2>
+
+                <div class="center relative">
+                    <div class="center">
+                        <a href="https://eventos.python.org.ar/tags/pyconar">
+                            <h1 class="text-color-1 full-width anim escalar relative z-plus-1">PyConAr</h1>
+                        </a>
+                        <div class="fecha fecha margin-auto small-padding text-color-1 glow">
+                            <h3 class="margin-none"><i class="fa fa-calendar"></i> 4, 5 y 64 de Diciembre de 2019</h3>
+                            <h4 class="margin-none">
+                                <span id="cuenta-regresiva"></span>
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="block text-white social-icons center full-width relative z-plus-1 sub-anim sub-escalar">
+                    <a href="https://www.instagram.com/pythonargentina/"><i class="fa fa-instagram"></i></a>
+                    <a href="https://www.facebook.com/pyconar/"><i class="fa fa-facebook-square"></i></a>
+                    <a href="https://t.me/pyconar"><i class="fa fa-telegram"></i></a>
+                    <a href="https://twitter.com/pyconar"><i class="fa fa-twitter-square"></i></a>
+                </div>
+
+            </div>
+
+            <svg version="1.1" id="rio-bg" class="relative" class="full-width" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 1000 55.4">
+                <polygon class="fill-grdnt1" points="-1,-1 -1,55.4 671.1,5.3 1001,55.4 1001,-1 " />
+            </svg>
+
+
+
+            <div class="big-padding">
+                <div class="relative max-w-1200 margin-auto color-white big-padding medium-margin glow border-bottom border-color-2">
+                    <h2 class="center titulo text-color-1">Acerca del evento</h2>
+                    <br>
+                    <div class="columnas-2 left-align">
+                        <!--p><img alt="" src="includes/header.jpg" style="border-style:solid; border-width:0px; height:20%; margin:2px 20px; width:100%"></p-->
+                        <p>La PyCon (Python Conference) es una convención anual para la discusión y promoción del lenguaje
+                            de programación Python. Se originó en Estados Unidos pero hoy en día se realiza en ese país, en
+                            Europa, España, Brasil, Inglaterra, Italia, China, y en otros treinta países.</p>
+                        <p>Desde 2009 se realiza también en Argentina, ese año en CABA, siendo declarado de Interés
+                            Cultural por la Ciudad de Buenos Aires. En consecuencia al carácter federal de nuestro país,
+                            las siguientes ediciones se realizaron en diferentes ciudades: Córdoba, Junín, Rosario,
+                            Quilmes, Rafaela, Mendoza y Bahía Blanca.</p>
+                        <p>La PyCon Argentina reúne a gran parte de la comunidad de habla hispana, de todas las edades y
+                            con un fuerte acento en diversidad. Es gratuita y abierta a todo público, dirigida a
+                            profesionales, estudiantes, académiques, empresaries, trabajadores, funcionaries
+                            públiques, entusiastes; es decir, se trata de un evento inclusivo y para todes. El
+                            número de asistentes crece año a año, rondando las 600 personas en el último año, en Córdoba.</p>
+                        <p>En general el evento es de tres días: jueves, viernes y sábado; el primer día de talleres y
+                            tutoriales y los siguientes dos días para charlas ya en formato conferencia clásica así como
+                            también espacios abiertos, talleres, y diferentes ámbitos pensados para la interacción de la
+                            comunidad de Python con otras comunidades, empresas e instituciones gubernamentales.</p>
+                        <p>El material presentado incluye todos los niveles, desde lo más orientado a principantes como los
+                            talleres y tutoriales del primer día, hasta charlas de nivel avanzado con calidad
+                            internacional, dadas por invitades de otros países o por disertantes locales que también dan
+                            charlas similares en conferencias de otros países.</p>
+                        <p>El evento está organizado por la comunidad de Python Argentina, cuyo objetivo es nuclear a les
+                            usuaries de Python y promover su uso.&nbsp; Python es un lenguaje de programación, de licencia
+                            abierta y libre, que es cada día más popular en la enseñanza, la industria y la ciencia, y es
+                            el lenguaje de mayor crecimiento en los últimos años. La comunidad cuenta con el soporte formal
+                            de la Asociación Civil Python Argentina.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="triangle-up-color-2 relative"></div>
+            <div class="relative full-width color-2 big-padding clear center">
+                <!-- <div class="margin-auto max-w-1200">
+                    <h1 class="small-margin titulo text-color-1 inline-block">Speakers</h1>
+                    <p><img class="shadow" alt="carol" src="https://pyconar2018.blob.core.windows.net/pyconar-static/carol.jpg" style="height:40%; margin-bottom:2px; margin-top:2px; width:70%"></p>
+                    <p><img class="shadow" alt="brandon" src="https://pyconar2018.blob.core.windows.net/pyconar-static/brandon.jpg" style="height:40%; margin-bottom:2px; margin-top:2px; width:70%"></p>
+                </div> -->
+            </div>
+            <div class="triangle-down-color-2 relative"></div>
+
+            <div class="relative margin-auto medium-padding color-white big-margin center glow border-bottom border-color-1">
+                <div class="well">
+                    <div class="row" style="text-align: center;">
+                        <h1 class="titulo text-color-2 inline-block">{% trans 'Talks and Workshops' %}</h1>
+                    </div>
+                    <!-- <div id="slick_charlas">
+                        {% if activities %}
+                        {% for activity in activities %}
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <a href='{% url "activity_detail" event.event_slug activity.id %}'>
+                                    {% if activity.image %}
+                                    <img src="{% cropped_thumbnail activity "cropping" %}" alt="{{ activity.title }}" width="100%" heigth="100%">
+                                    {% else %}
+                                    <img src="{% static "manager/img/charlas.png" %}" width="100%" alt="Charlas y Talleres">
+                                    {% endif %}
+                                </a>
+                            </div>
+                            <div class="col-sm-6">
+                                <a style='text-decoration: none;' href='{% url "activity_detail" event.event_slug activity.id %}'>
+                                    <h2>{{ activity.title }}</h2>
+                                </a>
+
+                                <p><strong>{{ activity.abstract }}</strong></p>
+
+                                <p>{{ activity.long_description }}</p>
+
+                                <p><strong>{% trans 'Speakers' %}:</strong> {{ activity.speakers_names|title }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="row">
+                            <div class="col-sm-6 col-md-6 col-lg-6" style="padding-top: 30px;">
+                                <img src="{% static "manager/img/charlas.png" %}" width="100%" alt="Charlas y Talleres">
+                            </div>
+                            <div class="col-sm-6 col-md-6 col-lg-6">
+                                <h2>Charlas y Talleres</h2>
+
+                                <p><strong>Durante todo el día, para que puedas aprender y descubrir más sobre el Software
+                                        Libre</strong></p>
+
+                                <p>A lo largo de la jornada, se llevarán a cabo diversas charlas y talleres para todo tipo
+                                    de público. No es necesario que sepas algo de informática para asistir al FLISoL. Hay
+                                    charlas tanto para principiantes como para entusiastas y expertos.</p>
+
+                                <p>Algunos de los temas propuestos son: Introducción a GNU/Linux, Filosofía del Software
+                                    Libre, Recomendaciones para Migrar, Comunidades, Presentación y utilización de algunas
+                                    de las principales aplicaciones (paquete de ofimática, navegador web, editor de
+                                    imágenes, etc.), Experiencias con Software Libre en Educación, Conocimiento Libre,
+                                    Licencias, Construcción Colaborativa de Conocimiento, Software Libre y Trabajo, Hardware
+                                    Libre, Investigación, Edición Multimedia con aplicaciones libres, Imagen y Sonido.</p>
+
+                                <p>Además, si tenés algo que contar y querés dar una charla, vos también podés formar parte.
+                                    {% comment %} <a href="{% url "activity_proposal" event_slug event_uid %}">Envianos tu propuesta!</a></p> {% endcomment %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div> -->
+                </div>
+            </div>
+
+            <div class="triangle-up-color-white relative"></div>
+            <!-- <div class="relative full-width color-white small-padding center clear glow">
+                <div class="margin-auto max-w-800">
+                    <h1 class="titulo text-color-1 inline-block">Te puede interesar...</h1>
+
+                    <div class="remeras">
+                        <h2 class="subtitulo text-color-2">Remeras</h2>
+                        <div class="center">
+                            <img src="https://lh3.googleusercontent.com/LR78A9PBtNW9fwxmYwNEX4HVhoTgDWFHYaEx7TVORBjQqhLFYN8z9molPO_Z5yc2WRBNKmgGSg=w1000">
+                        </div>
+                        <div>
+                            ¿Querés tu remera de PyConAr 2018? Completá <a href="http://bit.ly/remeras-pyconar">este formulario</a>
+                        </div>
+                    </div>
+
+                    <div class="becas">
+                        <h2 class="subtitulo text-color-2">Becas</h2>
+                        <div>
+                            Este año la conferencia cuenta con ayuda económica para facilitar la participación de toda la comunidad.
+                            Si te interesa podés leer mas información acá: <a href="http://bit.ly/becas-pyconar2018">acá</a>
+                        </div>
+                    </div>
+                </div>
+            </div> -->
+            <div class="triangle-down-color-white-reverse relative"></div>
+            <div class="big-margin"></div>
+
+
+            <div class="triangle-up-color-white-2 relative"></div>
+            <div class="relative full-width color-white small-padding center clear glow">
+                <div class="margin-auto max-w-800">
+                    <h1 class="titulo text-color-1 inline-block">Código de conducta</h1>
+
+                    <div>
+                        <p>
+                            PyConAr es un evento de la comunidad que busca mejorar la comunicación y
+                            colaboración entre los desarrolladores.
+                        </p>
+                        <p>
+                            Valoramos la participación de cada miembro de la comunidad de Python y
+                            queremos que todos los asistentes tengan una experiencia agradable y
+                            satisfactoria. Para ello, se espera de todos los asistentes que se sean
+                            respetuosos y educados con el resto de la los asistentes, sea durante la
+                            conferencia misma o cualquier otra etapa relacionada.
+                        </p>
+                        <p>
+                            Para que quede claro lo que se espera, todo delegado, disertante,
+                            expositor o voluntario deberá seguir el siguiente Código de Conducta.
+                            Los organizadores cuidarán la observación de estas normas
+                            durante el evento.
+                        </p>
+                    </div>
+
+                    <div class="conducta-version-corta">
+                        <h2 class="subtitulo text-color-2">La versión corta</h2>
+                        <div>
+                            <p>
+                                Uno de los objetivos de PyConAr es proveer una experiencia libre
+                                de acoso o discriminación para todos, sin distinciones de género,
+                                orientación sexual, invalidez, aspecto físico, tamaño corporal,
+                                etnia, o religión. No se tolerará la discriminación de los asistentes
+                                en ninguna forma.
+                            </p>
+                            <p>
+                                Todo contenido debería ser el apropiado para una audiencia profesional
+                                incluyendo a personas de distintas áreas. Las temáticas y contenidos
+                                sexuales no son apropiadas para ninguna instancia del evento.
+                            </p>
+                            <p>
+                                Se amable con los demás. No insultes o desprecies a otros aisistentes.
+                                Compórtate como un profesional. Recuerda que chistes discriminatorios, sexistas,
+                                racistas, de acoso no son apropiados para PyConAr.
+                            </p>
+                            <p>
+                                A los asistentes que violen estas normas se les podrá pedir que abandonen
+                                la conferencia sin derecho a reembolso, siendo suficiente para ello
+                                el criterio de los organizadores.
+                            </p>
+                            <p>
+                                Gracias por hacer de este un evento abierto a la comunidad y amistoso.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="conducta-version-larga">
+                        <h2 class="subtitulo text-color-2">La versión larga</h2>
+                        <div>
+                            <p>
+                                Acoso incluye comentarios ofensivos relativos a género, orientación sexual,
+                                invalidez, aspecto físico, tamaño corporal, etnia, religión,
+                                pornografía en espacios públicos, intimidación deliberada, acecho, persecución,
+                                acoso por fotografías o grabaciones, constante interrupción de charlas u otros
+                                eventos, contacto físico impropio y el acoso sexual.
+                            </p>
+                            <p>
+                                Los participantes que sean apercibidos por acoso deberán abstenerse inmediatamente.
+                            </p>
+                            <p>
+                                Se cuidadoso al seleccionar las palabras. Recuerda que los chistes sexistas,
+                                racistas y de otras clases pueden ser ofensivos para los demás.
+                                El exceso de malas palabras o chistes ofensivos no son apropiados para PyConAr.
+                            </p>
+                            <p>
+                                Si un participante se comportara de forma que violase el Código de Conducta,
+                                los organizadores de la conferencia podrían tomar las medidas que ellos
+                                consideren adecuadas, incluyendo el apercibimiento o expulsión de la
+                                conferencia, sin derecho a reembolso.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="conducta-contacto">
+                        <h2 class="subtitulo text-color-2">Contacto</h2>
+                        <div>
+                            <p>
+                                Si eres objeto de acoso, notas que alguien más está siendo acosado, o
+                                tienes cualquier otro reclamo, por favor contáctate con uno de los
+                                organizadores del evento o via mail a: <br />
+                                <br>
+                                coc@ac.python.o.a <br>
+                                yamila@ac.python.org.ar <br>
+                                adelfino@gmail.com
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="triangle-down-color-white-reverse relative"></div>
+            <div class="big-margin"></div>
+
+
+            <div class="relative full-width big-padding center color-2">
+                <!-- <div class="margin-auto max-w-800">
+                    <h1 class="titulo text-color-1 inline-block">Django Girls</h1>
+                    <p class="subtitulo text-color-1 inline-block">La registración al Django Girls que sucederá el jueves
+                        22 dentro de la conferencia ya está abierta,
+                        <a class="text-color-2 anim escalar" href="http://pyconar.miprimeraweb.org/">anotate!</a></p>
+                    <p><img class="shadow" alt="" src="https://pyconar2018.blob.core.windows.net/pyconar-static/template-800x800-inscripcionesabiertas.svg.png" style="height:50%; width:90%"></p>
+                </div> -->
+            </div>
+            <div class="triangle-down-color-2 relative"></div>
+
+
+
+            <div class="triangle-up-color-white relative"></div>
+            <div class="relative full-width color-white small-padding center clear glow">
+                <div class="margin-auto" style="max-width:1064px">
+                    <h1 class="subtitulo text-color-1">Con el apoyo de:</h1>
+                    <p>
+                        <img alt="" src="https://pyconar2018.blob.core.windows.net/pyconar-static/Sponsor-web-pyconar2018-95ppp-1065x555px.png" style="height:70%; margin-bottom:4px; margin-top:4px; width:90%">
+                    </p>
+                </div>
+            </div>
+
+
+            <div class="relative margin-auto color-white border-bottom border-color-1">
+                <div id="map" class="map"></div>
+                <div style="text-align:center">
+                    <h3 id="place_name" class="subtitulo text-color-1 margin-none">Centro Cultural San Martín</h3>
+                    <div id="address1" class="event-location-address text-color-1 margin-none"></div>
+                    <div class="row" style="width: 100%;">
+                        <div class="col-md-6 col-md-offset-3 col-xs-10 col-xs-offset-1">
+                            <hr>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-bottom: 20px; width: 100%;">
+                        <div class="col-md-6 col-md-offset-3 event-directions">
+                            <a id="directions-car" target="_blank" href="#"><i class="material-icons">directions_car</i></a>
+
+                            <a id="directions-walk" target="_blank" href="#"><i class="material-icons">directions_walk</i></a>
+
+                            <a id="directions-bus" target="_blank" href="#"><i class="material-icons">directions_bus</i></a>
+
+                            <a id="directions-bike" target="_blank" href="#"><i class="material-icons">directions_bike</i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="big-padding">
+            <div class="relative max-w-1200 margin-auto color-white big-padding medium-margin glow border-bottom border-color-2">
+                <h2 class="center titulo text-color-1">¿Cómo llegar?</h2>
+                <br>
+                <div class="columnas-1 left-align">
+                    <p>Para poder viajar colectivo dentro de la CABA y Gran Buenos Aires, es necesario
+                        la tarjeta <a href="https://www.argentina.gob.ar/sube/preguntas-frecuentes/conseguirla">SUBE</a>
+                        Aunque no es necesaria para el subte y tren ya que el mismo se puede comprar el boleto en
+                        las estaciones, las ventanillas no están siempre abiertas, asique es recomendable
+                        tener la tarjeta sube.</p>
+
+                    <p>Para manejarse dentro de CABA, sino sabe como llegar de un lugar a otro con el transporte público, hay
+                        varias aplicaciones para los celulares:
+                        <ul>
+                            <li>BA Cómo Llego: se puede usar para ver que opciones de transporte público uno puede usar para
+                                moverse dentro de CABA. Es gratuito, y tiene su versión para
+                                <a href="https://play.google.com/store/apps/details?id=ar.gob.buenosaires.comollego">Android</a>,
+                                y <a href="https://itunes.apple.com/ar/app/ba-c%C3%B3mo-llego/id576489186">iOS</a>
+                            </li>
+                            <li>BA Subte: indica el estado del subte y tiempos de cuando pasa el próximo para todas
+                                las líneas. Es gratuito y tiene su versión para
+                                <a href="https://play.google.com/store/apps/details?id=com.iphoideas.subte">Android</a>
+                                y <a href="https://itunes.apple.com/ar/app/ba-subte/id702871385">iOS</a>
+                            </li>
+                            <li>Trenes en Directo: indica el estado de las diferentes líneas de trenes, y tiempos de cuando
+                                sale el próximo. Es gratuito y tiene su versión para
+                                <a href="https://play.google.com/store/apps/details?id=com.mininterior.trenesenvivo">Android</a>
+                                y <a href="https://itunes.apple.com/ar/app/trenes-en-directo/id1169529009">iOS</a>
+                            </li>
+                        </ul>
+                    </p>
+
+                    Para llegar al lugar del evento hay varias opciones:
+
+                    <p><strong>Subte</strong>: tiene un costo de $19,00, y las siguientes líneas le dejan cerca del mismo:
+                        <ul>
+                            <li>Línea A: la estación Sáenz Peña le deja a 5 cuadras
+                            </li>
+                            <li>Línea B: la estación Uruguay le deja a 3 cuadras
+                            </li>
+                            <li>Línea C: la estación Diagonal Norte le deja a 6 cuadras
+                            </li>
+                            <li>Línea D: la estación Tribunales le deja a 5 cuadras
+                            </li>
+                        </ul>
+                        Pueden ver el horario del funcionamiento de las diferentes líneas
+                        <a href="https://www.metrovias.com.ar/Subterraneos/StaticPage/Tu-viaje/Horarios-del-servicio/3362">acá</a>
+                    </p>
+
+
+                    <p><strong>Tren</strong>: la línea San Martín no está llegando a Retiro (no entra en CABA), pero las
+                        líneas Mitre y Roca funcionan correctamente. El mismo tiene un costo de mínimo de $12,25(Con SUBE). Puede ver los
+                        horarios horarios para la línea Mitre <a href="https://www.trenmitre.com.ar/horarios/">acá</a>, y los
+                        de la línea Roca <a href="https://www.trenroca.com.ar/horarios/">acá</a>.Desde Retiro, hay
+                        diferentes colectivos que le dejan cerca del Centro Cultural San Martín: 5, 6, 26, 70, 50, 100, 115, 132.
+                        Desde Constitución, también hay varios colectivos: 39, 60, 100, 102. </p>
+
+                    <p><strong>Eco bicis</strong>: transporte público de bicicletas donde uno puede retirar uno en puntos predeterminados,
+                        y lo tiene que dejar en otro punto predeterminado. El servicio es gratuito pero para para poder
+                        usarlo es necesario registrarse usando la aplicación de
+                        <a href="https://play.google.com/store/apps/details?id=ar.gob.buenosaires.ecobici">Android</a>
+                        o la de <a href="https://itunes.apple.com/ar/app/ba-ecobici/id547325229?mt=8">iOS</a>.
+                        Hay dos puntos de EcoBici a menos de 4 cuadras del Centro Cultural.</p>
+
+                    <p><strong>Colectivos:</strong> tiene un costo mínimo de $18,00, y no se puede usar este servicio al menos
+                        que se cuente con una tarjeta <a href="https://www.argentina.gob.ar/sube/preguntas-frecuentes/conseguirla">SUBE</a>.
+                        El mismo funciona las 24 horas (dentro de CABA), aunque a la noche suele tener menor frecuencia.
+                        Algunas líneas que tienen paradas cerca del Centro Cultural son 5, 6, 7, 23, 24, 26, 29, 39, 50, 60, 102,
+                        146, 180. Por último, la parada Obelisco Sur del Metrobus 9 de Julio, le deja a unas 5 cuadras.</p>
+
+                    <p><strong>Taxi:</strong> tiene un costo de $45,80  al momento de iniciar el viaje y $ 4,58 por cada 200 metros de recorrido.
+                        Entre las 22:00 y las 06:00 rige una tarifa nocturna con un incremento del 20% en el valor del viaje.</p>
+
+                    <p><strong>Uber:</strong> el servicio de Uber funciona en CABA. No tengo informacion del costo del servicio</p>
+
+                    <div id="map-transport" class="map"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="big-padding">
+            <div class="relative max-w-1200 margin-auto color-white big-padding medium-margin glow border-bottom border-color-2">
+                <h2 class="center titulo text-color-1">Otras actividades</h2>
+                <br>
+                <div class="columnas-1 left-align">
+                    <p>Además, del PyCon Argentina 2019, en Capital Federal se pueden hacer otras actividades.
+                    </p>
+
+                    <h3>Atracciones y monumentos</h3>
+                    <ul>
+                        <li>MACBA (Museo de Arte Contemporáneo de Buenos Aires): De lunes a viernes de 11 a 19hs (Martes cerrado).
+                            Sábado y domingo de 11 a 19hs. Entrada Arancelada. Más información <a href="http://www.macba.com.ar" />acá</a></li>
+                        <li>Planetario: Martes a viernes de 13 a 17hs. Sábados, domingos y feriados 14:30, 15:30, 16:30, 17:30,
+                            18:30, 19:30. La entrada cuesta $120. Más información <a href="http://www.planetario.gob.ar/">acá</a></li>
+                        <li>Teatro Colón: Todos los días de 9 a 17hs cada 15 minutos. Más información <a href="http://www.teatrocolon.org.ar/">acá</a></li>
+                        <li>Catedral Metropolitana: Calle Rivadavia s/n, C1004 CABA</li>
+                        <li>Palacio San Martín (Ex Palacio Anchorena): Martes y jueves a las 14hs.</li>
+                        <li>Legislatura Porteña: de lunes a viernes de 9 a 20hs. Al museo, lunes y viernes de 13 a 17hs.</li>
+                        <li>Manzana de las Luces: Lunes a domingo de 10 a 21hs. Más información
+                            <a href="https://www.cultura.gob.ar/visitas-guiadas-en-la-manzana-de-las-luces_3197/">acá</a></li>
+                        <li>Centro Cultural Néstor Kirchner: Sábados, domingos y feriados a las 14 y 15:30. Se necesita
+                            pasaporte o DNI. Más información <a href="http://cck.gob.ar/visitas">acá</a></li>
+                        <li>Buque Museo Corbeta Uruguay: todos los días de 10 a 19. La entrada es gratuita.
+                            Más información <a href="http://www.ara.mil.ar/pag.asp?idItem=113">acá</a></li>
+                        <li>Buque Museo Fragata Presidente Sarmiento: todos los días de 10 a 19. Entrada
+                            libre y gratuita. Más información <a href="http://www.ara.mil.ar/pag.asp?idItem=112">acá</a></li>
+                        <li>MARQ (Museo de Arquitectura y Diseño de la Sociedad Central de Arquitectos): martes a domingo
+                            de 13 a 20hs. Entrada arancelada.</li>
+                        <li>MIFB (Museo de Arte Hispanoamericano Isaac Fernández Blanco): Martes a viernes de 13 a 19hs (lunes cerrado).
+                            Sábado, domingo y feriados de 11 a 19hs. Entrada arancelada, pero los miércoles es gratis.
+                            Más información <a href="http://www.buenosaires.gob.ar/museofernandezblanco/palacionoel">acá</a></li>
+                        <li>Museo Casa Rosada: de miércoles a domingo de 10 a 18hs. Entrada gratuita.
+                            Más información <a href="https://www.casarosada.gob.ar/la-casa-rosada/museo">acá</a></li>
+                        <li>Museo Histórico Nacional del Cabildo y de la Revolución de Mayo: Martes, miércoles y viernes de 10:30 a 17hs.
+                            Jueves de 10:30 a 20hs. Sábado, domingo y feriados de 10:30 a 18hs. Más información
+                            <a href="https://cabildonacional.cultura.gob.ar/info/visita/#Horario">acá</a></li>
+                        <li>Jardín Japonés: de lunes a domingo de 10 a 18hs. Entrada arancelada.
+                            Más información <a href="https://jardinjapones.org.ar/">acá</a></li>
+                        <li>Reserva Ecológica: Sábados, domingos y feriados de 9:30 a 16hs.
+                            Más información <a href="http://www.buenosaires.gob.ar/ciudadverde/espaciosverdes/reservaecologica/actividades">acá</a></li>
+                    </ul>
+
+                    <h3>Tours y actividades</h3>
+                    <ul>
+                        <li>Visita Guiada a Pie - Plaza de Mayo: domingos a las 15 y 17hs. Require inscripción
+                            previa. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-plaza-de-mayo">acá</a></li>
+                        <li>Visita Guiada a Pie - San Telmo: domingos a las 15hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-san-telmo">acá</a></li>
+                        <li>Visitas guiadas a pie - La Boca. viernes a las 15hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-la-boca">acá</a></li>
+                        <li>Visitas guiadas a pie - Recoleta: miércoles a las 15hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-recoleta">acá</a></li>
+                        <li>Visitas guiadas a pie - Bosques de Palermo: jueves a las 17hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-bosques-de-palermo">acá</a></li>
+                        <li>Visitas guiadas a pie - Puerto Madero: lunes a las 17hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-puerto-madero">acá</a></li>
+                        <li>Visitas guiada a pie - Retiro: todos los martes a las 17hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-retiro">acá</a></li>
+                        <li>Visitas guiadas nocturnas - Puerto Madero: cuarto viernes del mes a las 20hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-nocturna-puerto-madero">acá</a></li>
+                        <li>Visitas guiadas nocturnas - Av Alvear: tercer viernes del mes a las 20hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-nocturna-avenida-alvear">acá</a></li>
+                        <li>Visita guiada nocturna - Calle Arroyo: primer viernes de cada mes a las 20hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-nocturna-calle-arroyo">acá</a></li>
+                        <li>Trekking Urbano - 4km - Reserva Ecológica: martes y jueves a las 10hs. Requiere inscripción previa, y tiene una
+                            duración de 3 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-trekking-urbano-4-km-%E2%80%93-reserva-ecol%C3%B3gica">acá</a></li>
+                        <li>Trekking Urbano - 5km - Circuito Sur: Lunes y viernes a las 10hs. Requiere inscripción previa, y tiene una
+                            duración de 4 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/trekking-urbano-5-km-circuito-sur">acá</a></li>
+                        <li>Trekking Urbano - 8km - Circuito Norte: Miércoles y sábados a las 9hs. Requiere inscripción previa, y
+                            tiene una duración de 6 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/trekking-urbano-8-km-circuito-norte">acá</a></li>
+                        <li>Trekking Urbano - Desafío 18km: todos los domingos a las 10hs. Requiere inscripción previa, y tiene
+                            una duración de 6 horas. Más información
+                            <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-trekking-urbano-18-km-desaf%C3%ADo">acá</a></li>
+                        <li>Running BA - Recoleta: quinto sábado, y tercer domingo de cada mes a las 10hs. Requiere inscripción previa,
+                            y tiene una duración de 2 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/running-ba-circuito-recoleta">acá</a></li>
+                        <li>Running BA - Palermo: cuarto domingo de cada mes a las 10hs. Requiere inscripción previa, y tiene
+                            una duración de 2 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/running-ba-circuito-palermo">acá</a></li>
+                        <li>Running BA - Centro: cuarto sábado de cada mes a las 10hs. Require inscripción previa, y tiene
+                            una duración de 2 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/running-ba-circuito-centro">acá</a></li>
+                        <li>Running BA - Puerto Madero: tercer sábado, y primero o quinto domingo de cada mes a las 10hs. Require inscripción previa, y tiene
+                            una duración de 2 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/running-ba-circuito-puerto-madero">acá</a></li>
+                        <li>Circuito Papal: sábados y feriados a las 15hs. Domingos a las 9 y 15hs. Requiere inscripción previa.
+                            Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-circuito-papal">acá</a></li>
+                        <li>BA Remo: miércoles y domingos a las 10:45 y 12:15. Requiere inscripción previa, y tiene una duración de 90 minutos.</li>
+                        <li>Bici Tour BA - Los 6 sentidos de La Boca: lunes a viernes a las 10 y 15hs. Requiere inscripción previa, y
+                            tiene una duración de 75 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-bici-tour-ba-los-6-sentidos-de-la-boca">acá</a></li>
+                        <li>Bici Tour BA - Los 6 sentidos de Palermo: domingo a las 10hs. Requiere inscripción previa, y
+                            tiene una duración de 75 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-bici-tour-ba-los-6-sentidos-de-palermo">acá</a></li>
+                        <li>Bici Tour BA - Los 6 sentidos de Recoleta: lunes a viernes a las 10hs y 15hs. Requiere inscripción previa, y
+                            tiene una duración de 75 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-bici-tour-ba-los-6-sentidos-de-recoleta">acá</a></li>
+                        <li>Surf Urbano - Costanera Norte: sábados, domingos y feriados a las 15hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-surf-urbano-costanera-norte">acá</a></li>
+                        <li>Surf Urbano - Parque Centenario: lunes a viernes a las 10hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-surf-urbano-parque-centenario">acá</a></li>
+                        <li>Barrios Futboleros - Circuito Tradicional: lunes a las 10hs. Requiere inscripción previa, y
+                            tiene una duración de 6,5 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-barrios-futboleros">acá</a></li>
+                        <li>Barrios Futboleros - Rivalidades Históricas: miércoles a las 10hs. Requiere inscripción previa, y
+                            tiene una duración de 5,5 horas. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-barrios-futboleros-rivalidades-hist%C3%B3ricas">acá</a></li>
+                        <li>Entre Tangos y Milonga - Circuito Amarillo: cuarto domingo de cada mes a las 15hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-entre-tangos-y-milongas-%E2%80%93-circuito-amarillo">acá</a></li>
+                        <li>Entre Tangos y Milonga - Circuito Rojo: segundo domingo de cada mes a las 15hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-entre-tangos-y-milongas-circuito-rojo">acá</a></li>
+                        <li>Arte urbano - Palermo: tercer sábado de cada mes a las 11hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-arte-urbano-palermo">acá</a></li>
+                        <li>Arte urbano - Barracas: cuarto sábado de cada mes a las 11hs. Requiere inscripción previa, y
+                            tiene una duración de 90 minutos. Más información <a href="https://turismo.buenosaires.gob.ar/es/article/visita-guiada-arte-urbano-barracas">acá</a></li>
+                    </ul>
+
+                    <!-- <h3>Arte y Cultura</h3>
+                    <ul>
+                        <li>Latinoamérica - Volver al futuro: del 21 al 28 de noviembre en el MACBA. Lunes y viernes de 11 a 19hs (martes cerrado). Sábados
+                            y domingos de 11 a 19:30hs. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/latinoam%C3%A9rica-volver-al-futuro/180819">acá</a></li>
+                        <li>Arte latinoamericano - 1900 - 1970: del 20 de septiembre al 31 de diciembre en el Malba.
+                            Más información <a href="https://www.arteinformado.com/agenda/f/arte-latinoamericano-19001970-163594">acá</a></li>
+                        <li>Imágenes Transformadoras: del 9 de noviembre a 17 de febrero 2019, en el Malba
+                            Más información <a href="https://www.arteinformado.com/agenda/f/imagenes-transformadoras-transforming-images-151527">acá</a></li>
+                        <li>Iván Argote: del 23 de noviembre a 24 de febrero 2019, en el Malba.
+                            Más información <a href="https://www.arteinformado.com/agenda/f/ivan-argote-151528">acá</a></li>
+                        <li>JMW Turner - Acuarelas Tate Collection: del 26 de septiembre a 24 de febrero 2019, en el Museo Nacional de Bellas Artes (MNBA).
+                            Más información <a href="https://www.arteinformado.com/agenda/f/j-m-w-turner-acuarelas-tate-collection-151824">acá</a></li>
+                        <li>Las formas del sonido: del 21 al 28 de noviembre, en el Centro Cultural Kirchner. Miércoles a domingo (y feriados)
+                            de 13 a 20hs. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/las-formas-del-sonido/185316">acá</a></li>
+                        <li>Pasacalle - Splash in vitro: del 21 al 28 de noviembre, en el Centro Cultural Kirchner. Miércoles a domingo (y feriado
+                            de 13 a 20hs. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/pasacalle-splash-in-vitro/184494">acá</a></li>
+                        <li>Democracia en obra: del 19 de mayo al 31 de diciembre, en el Centro Cultural Kirchner.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/democracia-en-obra/184006">acá</a></li>
+                        <li>El monstruo de Frankenstein: del 31 de mayo al 31 de diciembre, en la Biblioteca Nacional. Lunes a viernes de
+                            9 a 21hs. Sábados y domingos de 12 a 19hs. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/el-monstruo-de-frankestein/182281">acá</a></li>
+                        <li>Otros fenómenos - Santiago Andrés Viale: Martes a viernes de 13:30 a 22hs. Sábados, domingos y feriados de 11:15
+                            a 22hs. En el Centro Cultural Recoleta. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/otros-fen%C3%B3menos-santiago-andr%C3%A9s-viale/184750">acá</a></li>
+                        <li>Proyecto Intimx: Martes a viernes de 13:30 a 22hs. Sábados, domingos y feriados de 11:15
+                            a 22hs. En el Centro Cultural Recoleta. Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/proyecto-intimx/184752">acá</a></li>
+                        <li>Hello Andy?: 25 de noviembre en Fundación Proa. Más información <a href="http://www.alternativateatral.com/obra60707-hello-andy&23/09/2018">acá</a></li>
+                        <li>Alexander Calder - Teatro de encuentros: del 8 de septiembre al 27 de enero del 2019, en Fundación Proa.
+                            Más información <a href="https://www.arteinformado.com/agenda/f/alexander-calder-teatro-de-encuentros-161086">acá</a></li>
+                        <li>Marcel Duchamp - Una obra que no es una obra "de arte": del 23 al 27 de noviembre, en Fundación Proa.
+                        <li>La fotografía como testigo - Lange: del 28 de octubre al 30 de noviembre, en el Centro Cultural Borges.
+                            Lunes a sábados de 10 a 21hs. Domingos de 12 a 21hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/la-fotograf%C3%ADa-como-testigo-lange/185481">acá</a></li>
+                        <li>XXV Bienal de Arte Textil: 24 y 25 de noviembre, en el Museo de Artes Plásticas Eduardo Sívori.
+                            Martes a viernes de 12 a 20hs. Sábados, domingos y feriados de 10 a 20hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/xxv-bienal-de-arte-textil/2916">acá</a></li>
+                        <li>Premio de dibujo Alberto Trabucco: del 20 al 29 de noviembre, en el Museo de Artes Plásticas Eduardo Sívori.
+                            Martes a viernes de 12 a 20hs. Sábados, domingos y feriados de 10 a 20hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/premio-de-dibujo-alberto-trabucco/2747">acá</a></li>
+                        <li>Gardel y los deportes: del 21 al 28 de noviembre, en el Museo Casa Carlos Gardel.
+                            Lunes, miércoles, jueves y viernes de 11 a 18hs. Sábados, domingos y feriados de 10 a 19hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/gardel-y-los-deportes/2452">acá</a></li>
+                        <li>Casa nacional del Bicentenario: del 15 de agosto al 30 de diciembre, en la Casa Nacional del Bicentenario.
+                            Más información <a href="https://www.arteinformado.com/agenda/f/casa-nacional-del-bicentenario-162119">acá</a></li>
+                        <li>Seremos serias de la manera más alegre: del 16 de septiembre al 15 de diciembre, en
+                            la Casa Nacional del Bicentenario. Martes a domingos de 14 a 20hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/seremos-serias-de-la-manera-m%C3%A1s-alegre/184611">acá</a></li>
+                        <li>Grandes maestros: del 16 de septiembre al 30 de diciembre, en
+                            la Casa Nacional del Bicentenario. Martes a domingos de 14 a 20hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/grandes-maestros/184609">acá</a></li>
+                        <li>Buenos Aires - Memoria antigua: del 18 de octubre al 2 de diciembre, en la Sede Palacio Noel.
+                            Martes a viernes de 13 a 19hs. Sábados, domingos y feriados de 11 a 19hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/buenos-aires-memoria-antigua/2850">acá</a></li>
+                        <li>Seminario de literatura policial: del 3 de septiembre al 3 de diciembre, en Sede Palacio Noel.
+                            Lunes de 18:30 a 20hs. Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/seminario-de-literatura-policial/2481">acá</a></li>
+                        <li>Astrología en el museo: del 8 de abril a 9 de diciembre, en el MACBA. Domingos de 17 a 19hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/astrolog%C3%ADa-en-el-museo/181104">acá</a></li>
+                        <li>Concurso nacional de artesanías: del 20 de octubre al 28 de febrero, en el Museo de Arte Popular José Hernández.
+                            Martes a viernes de 13 a 19hs. Sábados, domingo y feriados de 10 a 20hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/concurso-nacional-de-artesanas/1149">acá</a></li>
+                    </ul>
+
+                    <h3>Otros eventos de interés</h3>
+                    <ul>
+                        <li>Nuevas metodologías - Design Thinking. 28 de noviembre, en la Estación Federal.
+                            Más información <a href="https://www.argentina.gob.ar/desarrollosocial/estacionfederal/agenda#Nuevas%20metodolog%C3%ADas:%20Design%20thinking&/28/11/17%20a%2020%20hs">acá</a></li>
+                        <li>Visitas guiadas al Palacio Barolo: del 27 de agosto al 10 de diciembre.
+                            Lunes, miércoles, y jueves a las 10, 12, 14, 16, 17, 18 y 19hs. Viernes: 10, 12, 13, 14, 15, 16, 17 y 18hs.
+                            Sábados: 10, 11, 12, 13, 14, 15, 16, y 18hs. No se recomienda la visita a personas
+                            con movilidad reducida. Más información
+                            <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/visitas-guiadas-en-el-palacio-barolo/184136">acá</a></li>
+                        <li>Actividades en el nuevo auditorio del instituto: del 1 de abril al 30 de noviembre, en el Teatro Colón.
+                            Más información <a href="http://www.teatrocolon.org.ar/es/2018/instituto-superior-de-arte/actividades-en-el-nuevo-auditorio-del-instituto?2018/11/30">acá</a></li>
+                        <li>Un encuentro con Sergi Torres: 27 de noviembre, en el Paseo la Plaza.
+                            Más información <a href="https://www.plateanet.com/obra/12884?obra=un-encuentro-con-sergi-torres&paso=inicio">acá</a></li>
+                        <li>Somos estrellas: del 1 de octubre al 20 de diciembre, en el Planetario Galileo Galilei.
+                            Sábados y domingos de 14:30 y 18:30. Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/somos-estrellas/2814">acá</a></li>
+                        <li>Horizontes cósmicos: del 9 de marzo al 20 de diciembre, en el Planetario Galileo Galilei.
+                            Martes a viernes a las 11:30, 15:30, y 16:30hs. Sábados y domingos a las 14, 16, 18 y 19hs.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/horizontes-csmicos/1614">acá</a></li>
+                        <li>Visitas guiadas en el Centro Cultural Kirchner: del 27 de agosto al 30 de noviembre.
+                            Sábados, domingos y feriados a las 14 y 15:30hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/visitas-guiadas-en-el-cck/183998">acá</a></li>
+                        <li>Expo interactiva en el planetario: del 22 de marzo al 30 de noviembre, en el Planetario Galileo Galilei.
+                            Más información <a href="https://www.zibilia.com//=ExpoInteractivaEnElPlanetario?2018-03-27">acá</a></li>
+                        <li>Sábado ! Cócteles - Live Show - Disco: 24 de noviembre, en el Club Aráoz.
+                            Más información <a href="https://www.zibilia.com//=SabadosCoctelesLiveShowDisco?2018-11-24">acá</a></li>
+                        <li>Visitas guiadas en el Moderno: del 27 de agosto al 18 de diciembre, en el Museo de Arte Moderno de Buenos Aires.
+                            Martes a viernes a las 16hs. Sábados, domingos y feriados a las 15hs.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/visitas-guiadas-en-el-moderno/183970">acá</a></li>
+                        <li>Taller de dibujo con modelo vivo: del 12 de agosto al 24 de noviembre, en el Complejo Cultural 25 de Mayo.
+                            Más información <a href="https://www.vuenosairez.com/ar/ciudad-de-buenos-aires/agenda/taller-de-dibujo-con-modelo-vivo/183888">acá</a></li>
+                        <li>Ayres de arte: del 22 de octubre al 31 de diciembre, en Sede Palacio Noel.
+                            Todos los viernes a las 15hs. Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/ayres-de-arte/2936">acá</a></li>
+                        <li>Pub Crawl Out in BA: todo el año y todos los días, en el Foynes Bar.</li>
+                        <li>Los cuentos de la abuela: del 23 y 24 de noviembre en el Teatro Colonial.
+                            Más información <a href="http://www.alternativateatral.com/obra59612-los-cuentos-de-la-abuela">acá</a></li>
+                        <li>El mate y el facón - Talleres: del 22 al 25 de noviembre, en el Museo de Arte Popular José Hernández.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/el-mate-y-el-facn-talleres/2913">acá</a></li>
+                        <li>Talleres del museo Hernández: del 1 de mayo al 30 de noviembre, en el Museo de Arte Popular José Hernández.
+                            Más información <a href="https://disfrutemosba.buenosaires.gob.ar/evento/el-mate-y-el-facn-talleres/2913">acá</a></li>
+
+                    </ul> -->
+
+                    <div id="map-activities" class="map"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="big-padding">
+            <div class="relative max-w-1200 margin-auto color-white big-padding medium-margin glow border-bottom border-color-2">
+                <h2 class="center titulo text-color-1">¿Donde almorzar?</h2>
+                <br>
+                <div class="columnas-1 left-align">
+                    <p>Dentro de las salas del Centro Cultural no se puede llevar bebidas ni comida,
+                        pero si se puede tomar y beber en el hall. Una lista de lugares a donde salir a
+                        almorzar los días del evento:
+
+                        <ul>
+                            <li>Burger King: Av. Corrientes 1770. 3 cuadras. Hamburguesas.</li>
+                            <li>Mc Donalds: Av Callao 131. 4,5 cuadras. Hamburguesas.</li>
+                            <li>Mc Donalds: Av. Corrientes 992/6. 6 cuadras. Hamburguesas.</li>
+                            <li>Dellepiane Bar: Luis Dellepiane 685. 6 cuadras. Hamburguesas.</li>
+                            <li>El Palacio de la Papa Frita: Av. Corrientes 1612. Hamburguesas.</li>
+
+                            <li>Sattva: Montevideo 446. 2 cuadras. Restaurante. Cuenta con opciones vegetarianas</li>
+                            <li>Tataki Restaurante: Rodríguez Peña 433. 3 cuadras. Restaurante de comida peruana</li>
+                            <li>Green life: Av. Corrientes 1915. 5 cuadras. Restaurante. Cuenta con opciones vegetariana</li>
+                            <li>Parrilla Peña: Rodríguez Peña 682. 5 cuadras. Restaurante</li>
+
+                            <li>Kentucky: Av. Corrientes 1502. 2 cuadras. Pizzeria</li>
+                            <li>La Continental: Av. Callao 361. 3 cuadras. Pizzeria</li>
+                            <li>La Continental: Av. Callao 202. 3 cuadras. Pizzeria</li>
+                            <li>Pizzería Güerrin: Av. Corrientes 1368. 3 cuadras. Pizzeria</li>
+                            <li>Los Inmortales: Av. Corrientes 1369. 3 cuadras. Pizzeria</li>
+                            <li>La Americana: Av. Corrientes 1383. 3 cuadras. Pizzeria</li>
+                            <li>Banchero: Av. Corrientes 1300. 4 cuadras. Pizzeria</li>
+
+                            <li>Starbucks: Cerrito 336. 5 cuadras. Cafe</li>
+                            <li>La Paz: Av. Corrientes 1593. 2 cuadras. Cafe</li>
+                            <li>Café Martínez: Uruguay 463. 3 cuadras. Cafe</li>
+                            <li>Cafetería Uruguay: Uruguay 485. 3 cuadras. Cafe</li>
+
+                            <li>La Birreria: Sarmiento 1635. 1 cuadra. Bar</li>
+                            <li>Covo Birreria: Montevideo 382. 2 cuadras. Bar</li>
+                            <li>Dellepiane Bar: Luis Dellepiane 685. 5 cuadras. Bar</li>
+
+                        </ul>
+
+
+                        <div id="map-lunch" class="map"></div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="separador-front color-1 full-width"></div><!-- un margen para que se vea el logo, esto va solo en la front -->
+
+        <footer class="main-footer color-1">
+            <div id="Puente-mujer" class="full-width">
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 942.7 327.3">
+                    <path class="fill-white" d="M285.8,234.8C399.7,139.1,530.7,15,530.7,15s13.6-11.9,10.8-14.7S517,15,517,15L195.9,254.3c0,0-81.3,62.5-195.9,73l-5.9,3.7l958.6,0.1v-3.7H263.1C250.2,327.4,195,311.6,285.8,234.8z" />
+                </svg>
+                <div></div>
+                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 942.7 77.6">
+                    <path class="fill-white" d="M-10-36.8L-5.9,0h56.1l12.2,36.9v50.5H105V37l16.4-37h706.4c4.9,0.3,5.4,7.8,5.6,11.9v75.7h36.3V4.9c0,0,1.7-4.9,9.7-4.9s73.3,0,73.3,0v-36.7L-10-36.8z" />
+                </svg>
+            </div>
+
+            <div class="event-contacts full-width">
+                <h3 class="text-color-2 subtitulo">Seguir PyConAr 2019!</h3>
+                <div class="col-md-10 col-md-offset-1 sub-anim sub-escalar">
+                    <a class="contact-link" href="https://www.instagram.com/pythonargentina/"><i class="fa fa-instagram"></i></a>
+                    <a class="contact-link" href="https://www.facebook.com/pyconar/"><i class="fa fa-facebook-square"></i></a>
+                    <a class="contact-link" href="https://t.me/pyconar"><i class="fa fa-telegram"></i></a>
+                    <a class="contact-link" href="https://twitter.com/pyconar"><i class="fa fa-twitter-square"></i></a>
+                </div>
+            </div>
+
+            <div class="eventol">
+                <a href="https://github.com/eventol/eventoL"><i class="fa fa-github"></i>{% trans "You have the power!" %}</a>
+            </div>
+        </footer>
+        {% endblock %}
+    </div>
+    {% endblock %}
+    </div>
+
+    {% block script %}
+    <script src="{% static "manager/bower_components/bootstrap/dist/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "manager/bower_components/bootstrap-material-design/dist/js/ripples.min.js" %}"></script>
+    <script src="{% static "manager/bower_components/bootstrap-material-design/dist/js/material.min.js" %}"></script>
+    {% block material %}
+    <script>
+        $(document).ready(function() {
+            $.material.options.autofill = true;
+            $.material.init();
+        });
+
+        function change_lang(language_code) {
+            $.post(
+                "{% url 'set_language' %}", {
+                    language: language_code,
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                function(data, status, xhr) {
+                    location.reload();
+                }
+            );
+        }
+    </script>
+    {% endblock %}
+    {% block other-script %}
+    <script src="{% static "manager/bower_components/slick-carousel/slick/slick.min.js" %}"></script>
+    <script src="{% static "manager/bower_components/leaflet/dist/leaflet.js" %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#slick_charlas').slick({
+                'autoplay': true,
+                'dots': true
+            });
+
+            (function() {
+                var isPlaying = true;
+                $('#slick_charlas').click(function() {
+                    if (isPlaying) {
+                        $('#slick_charlas')
+                            .slick('slickSetOption', 'autoplay', false)
+                            .slick('slickPause');
+                        isPlaying = false;
+                    } else {
+                        $('#slick_charlas')
+                            .slick('slickSetOption', 'autoplay', true)
+                            .slick('slickPlay');
+                        isPlaying = true;
+                    }
+                });
+            })()
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            function map(selector, event_lat, event_lon) {
+                var map = L.map(selector, {
+                    scrollWheelZoom: false,
+                    touchZoom: false
+                }).setView([event_lat, event_lon], 14);
+
+                L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a>'
+                }).addTo(map);
+                map.attributionControl.setPrefix(''); // Don't show the 'Powered by Leaflet' text.
+                L.marker([event_lat, event_lon]).addTo(map);
+                return map;
+            }
+
+            var event_place = {
+                "address_components": [{
+                        "long_name": "1551",
+                        "short_name": "1551",
+                        "types": ["street_number"]
+                    },
+                    {
+                        "long_name": "Sarmiento",
+                        "short_name": "Sarmiento",
+                        "types": ["route"]
+                    },
+                    {
+                        "long_name": "San Nicolas",
+                        "short_name": "San Nicolas",
+                        "types": ["political", "sublocality", "sublocality_level_1"]
+                    },
+                    {
+                        "long_name": "Comuna 1",
+                        "short_name": "Comuna 1",
+                        "types": ["administrative_area_level_2", "political"]
+                    },
+                    {
+                        "long_name": "Buenos Aires",
+                        "short_name": "CABA",
+                        "types": ["administrative_area_level_1", "political"]
+                    },
+                    {
+                        "long_name": "Argentina",
+                        "short_name": "AR",
+                        "types": ["country", "political"]
+                    },
+                    {
+                        "long_name": "C1042",
+                        "short_name": "C1042",
+                        "types": ["postal_code"]
+                    },
+                    {
+                        "long_name": "ABC",
+                        "short_name": "ABC",
+                        "types": ["postal_code_suffix"]
+                    }
+                ],
+                "formatted_address": "Sarmiento 1551, C1042ABC CABA, Argentina",
+                "geometry": {
+                    "location": {
+                        "lat": -34.6052436,
+                        "lng": -58.388569700000005
+                    },
+                    "location_type": "ROOFTOP",
+                    "viewport": {
+                        "south": -34.6065925802915,
+                        "west": -58.38991868029149,
+                        "north": -34.60389461970851,
+                        "east": -58.387220719708466
+                    }
+                },
+                "place_id": "ChIJbXpzCcTKvJURbeIVAyh6SnU",
+                "plus_code": {
+                    "compound_code": "9JV6+WH Buenos Aires, Argentina",
+                    "global_code": "48Q39JV6+WH"
+                },
+                "types": ["street_address"]
+            };
+            map('map', event_place.geometry.location.lat, event_place.geometry.location.lng);
+
+
+            function createTransportMap() {
+                var transportMap = map('map-transport', event_place.geometry.location.lat, event_place.geometry.location.lng);
+
+                var transportMakers = [
+                    [
+                        [-34.609157, -58.386583], {
+                            'title': 'Linea A: estación Sáenz Peña'
+                        }
+                    ],
+                    [
+                        [-34.6040578, -58.3867263], {
+                            'title': 'Linea B: estación Uruguay'
+                        }
+                    ],
+                    [
+                        [-34.604617, -58.37946], {
+                            'title': 'Linea C: estación Diagonal Norte'
+                        }
+                    ],
+                    [
+                        [-34.602628, -58.385175], {
+                            'title': 'Linea D: estación Trivunales'
+                        }
+                    ],
+
+                    [
+                        [-34.591204, -58.374967], {
+                            'title': 'Tren: estación Retiro'
+                        }
+                    ],
+                    [
+                        [-34.628100, -58.380551], {
+                            'title': 'Tren: estación Constitución'
+                        }
+                    ],
+
+                    [
+                        [-34.606355, -58.385452], {
+                            'title': 'Eco Bici: Dr. Rodolfo Rivarola 175'
+                        }
+                    ],
+                    [
+                        [-34.602986, -58.388701], {
+                            'title': 'Eco Bici'
+                        }
+                    ],
+
+                    [
+                        [-34.605384, -58.38152], {
+                            'title': 'Colectivo: estación Oblesico Sur metrobus'
+                        }
+                    ],
+                    [
+                        [-34.611379, -58.392065], {
+                            'title': 'Colectivo: parada linea 168'
+                        }
+                    ],
+                    [
+                        [-34.611379, -58.392065], {
+                            'title': 'Colectivo: parada linea 102'
+                        }
+                    ],
+                    [
+                        [-34.605346, -58.389133], {
+                            'title': 'Colectivo: parada linea 50'
+                        }
+                    ],
+                    [
+                        [-34.604216, -58.388253], {
+                            'title': 'Colectivo: parada linea 6, 24, 50 115, 146, 180'
+                        }
+                    ],
+                    [
+                        [-34.605015, -58.385201], {
+                            'title': 'Colectivo: parada linea 5, 39, 60'
+                        }
+                    ],
+                ];
+
+                for (var i = 0; i < transportMakers.length; i++) {
+                    var markerInfo = transportMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(transportMap);
+                }
+            }
+            createTransportMap();
+
+
+            function createActivitiesMap() {
+                var activitiesMap = map('map-activities', event_place.geometry.location.lat, event_place.geometry.location.lng);
+
+                var activiesMakers = [
+                    [
+                        [-34.606948, -58.385533], {
+                            'title': 'Museo de la Mujer Argentina'
+                        }
+                    ],
+                    [
+                        [-34.609707, -58.385867], {
+                            'title': 'Palacio Barolo'
+                        }
+                    ],
+                    [
+                        [-34.609329, -58.380006], {
+                            'title': 'Museo Argentino de Magia'
+                        }
+                    ],
+                    [
+                        [-34.603522, -58.381558], {
+                            'title': 'Obelisco'
+                        }
+                    ],
+                    [
+                        [-34.607858, -58.370370], {
+                            'title': 'Casa Rosada'
+                        }
+                    ],
+                    [
+                        [-34.608548, -58.373812], {
+                            'title': 'Museo Histórico Nacional del Cabildo y la Revolución de Mayo'
+                        }
+                    ],
+                    [
+                        [-34.607300, -58.373271], {
+                            'title': 'Catedral Metropolitana de Buenos Aires'
+                        }
+                    ],
+                    [
+                        [-34.607894, -58.369666], {
+                            'title': 'Museo Casa Rosada'
+                        }
+                    ],
+                    [
+                        [-34.603571, -58.369175], {
+                            'title': 'Centro Cultural Kirchner - CCK'
+                        }
+                    ],
+                    [
+                        [-34.621943, -58.369980], {
+                            'title': 'Museo de Arte Moderno de Buenos Aires'
+                        }
+                    ],
+                    [
+                        [-34.590664, -58.379971], {
+                            'title': 'Sede Palacio Noel'
+                        }
+                    ],
+                    [
+                        [-34.579653, -58.405009], {
+                            'title': 'Museo de Arte Popular José Hernández'
+                        }
+                    ],
+                    [
+                        [-34.621853, -58.369851], {
+                            'title': 'Museo de Arte Contemporaneo de Buenos Aires - MACBA'
+                        }
+                    ],
+                    [
+                        [-34.577013, -58.403194], {
+                            'title': 'MALBA'
+                        }
+                    ],
+                    [
+                        [-34.584430, -58.397450], {
+                            'title': 'Biblioteca Nacional'
+                        }
+                    ],
+
+                    [
+                        [-34.609716, -58.383922], {
+                            'title': 'Teatro Avenida'
+                        }
+                    ],
+                    [
+                        [-34.608631, -58.386971], {
+                            'title': 'Teatro Liceo'
+                        }
+                    ],
+                    [
+                        [-34.603921, -58.389413], {
+                            'title': 'Teatro Astral'
+                        }
+                    ],
+                    [
+                        [-34.603606, -58.385419], {
+                            'title': 'Teatro Metropolitan SURA'
+                        }
+                    ],
+                    [
+                        [-34.604142, -58.386121], {
+                            'title': 'Teatro Apolo'
+                        }
+                    ],
+                    [
+                        [-34.600796, -58.383033], {
+                            'title': 'Teatro Colón'
+                        }
+                    ],
+                    [
+                        [-34.603395, -58.379009], {
+                            'title': 'Teatro Gran Rex'
+                        }
+                    ],
+                    [
+                        [-34.603558, -58.383051], {
+                            'title': 'Broadway Theatre'
+                        }
+                    ],
+                    [
+                        [-34.603350, -58.376285], {
+                            'title': 'Teatro Astros'
+                        }
+                    ],
+                    [
+                        [-34.603632, -58.393282], {
+                            'title': 'Teatro Picadero'
+                        }
+                    ],
+
+                    [
+                        [-34.569473, -58.411572], {
+                            'title': 'Planetario Galileo Galilei'
+                        }
+                    ],
+                    [
+                        [-34.545315, -58.449292], {
+                            'title': 'Estadio Monumental Antonio Vespucio Liberti'
+                        }
+                    ],
+                    [
+                        [-34.635452, -58.364735], {
+                            'title': 'Estadio Alberto J. Armando'
+                        }
+                    ],
+                    [
+                        [-34.667684, -58.368130], {
+                            'title': 'Estadio Racing Club de Avellaneda'
+                        }
+                    ],
+                    [
+                        [-34.604364, -58.390208], {
+                            'title': 'Paseo La Plaza'
+                        }
+                    ],
+                ];
+
+                for (var i = 0; i < activiesMakers.length; i++) {
+                    var markerInfo = activiesMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(activitiesMap);
+                }
+            }
+            createActivitiesMap();
+
+
+            $('#address1').html(event_place.formatted_address);
+
+            $('#directions-car').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=d');
+
+            $('#directions-walk').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=w');
+
+            $('#directions-bus').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=r');
+
+            $('#directions-bike').attr('href',
+                'https://maps.google.com/?saddr=Current+Location&daddr=' + event_place.geometry.location.lat + ',' +
+                event_place.geometry.location.lng + '&dirflg=b');
+
+            var ahora = new Date();
+            if (ahora < new Date(2018, 10, 22)) {
+                var dias = Math.round((new Date(2018, 10, 22) - new Date()) / (1000 * 60 * 60 * 24)) + 1;
+                $('#cuenta-regresiva').html('Faltan ' + dias + ' días')
+            } else if (ahora < new Date(2018, 10, 25)) {
+                $('#cuenta-regresiva').html('¡Es ahora!')
+            } else {
+                $('#cuenta-regresiva').html('Te esperamos en la próxima')
+            }
+
+
+            function createLunchMap() {
+                var lunchMap = map('map-lunch', event_place.geometry.location.lat, event_place.geometry.location.lng);
+
+                var restaurantsMakers = [
+                    [
+                        [-34.604431, -58.391874], {
+                            'title': 'Burger King'
+                        }
+                    ],
+                    [
+                        [-34.607628, -58.391906], {
+                            'title': 'Mc Donalds'
+                        }
+                    ],
+                    [
+                        [-34.603742, -58.380287], {
+                            'title': 'Mc Donalds'
+                        }
+                    ],
+                    [
+                        [-34.600951, -58.390930], {
+                            'title': 'Dellepiane Bar'
+                        }
+                    ],
+                    [
+                        [-34.604358, -58.389602], {
+                            'title': 'El Palacio de la Papa Frita'
+                        }
+                    ],
+
+                    [
+                        [-34.604302, -58.388174], {
+                            'title': 'Kentucky'
+                        }
+                    ],
+                    [
+                        [-34.604813, -58.392116], {
+                            'title': 'La Continental'
+                        }
+                    ],
+                    [
+                        [-34.606714, -58.392295], {
+                            'title': 'La Continental'
+                        }
+                    ],
+                    [
+                        [-34.604038, -58.385837], {
+                            'title': 'Pizzería Güerrin'
+                        }
+                    ],
+                    [
+                        [-34.603914, -58.386147], {
+                            'title': 'Los inmortales'
+                        }
+                    ],
+                    [
+                        [-34.604001, -58.384952], {
+                            'title': 'Banchero'
+                        }
+                    ],
+                    [
+                        [-34.603800, -58.386295], {
+                            'title': 'La Americana'
+                        }
+                    ],
+
+                    [
+                        [-34.603719, -58.389494], {
+                            'title': 'Sattva'
+                        }
+                    ],
+                    [
+                        [-34.603712, -58.390776], {
+                            'title': 'Tataki Restaurante'
+                        }
+                    ],
+                    [
+                        [-34.604384, -58.394086], {
+                            'title': 'Green Life'
+                        }
+                    ],
+                    [
+                        [-34.601030, -58.391614], {
+                            'title': 'Parrilla Peña'
+                        }
+                    ],
+
+                    [
+                        [-34.604537, -58.382219], {
+                            'title': 'Starbucks'
+                        }
+                    ],
+                    [
+                        [-34.604116, -58.389269], {
+                            'title': 'La Paz'
+                        }
+                    ],
+                    [
+                        [-34.603401, -58.386496], {
+                            'title': 'Café Martínez'
+                        }
+                    ],
+                    [
+                        [-34.603056, -58.386319], {
+                            'title': 'Cafetería Uruguay'
+                        }
+                    ],
+
+                    [
+                        [-34.600960, -58.390918], {
+                            'title': 'Dellepiane Bar'
+                        }
+                    ],
+                    [
+                        [-34.605322, -58.389884], {
+                            'title': 'La Birreria'
+                        }
+                    ],
+                    [
+                        [-34.604439, -58.389498], {
+                            'title': 'Covo Birreria'
+                        }
+                    ]
+                ];
+
+                for (var i = 0; i < restaurantsMakers.length; i++) {
+                    var markerInfo = restaurantsMakers[i];
+                    L.marker(markerInfo[0], markerInfo[1]).addTo(lunchMap);
+                }
+            }
+            createLunchMap();
+
+        });
+    </script>
+
+
+    {% endblock %}
+    {% endblock %}
+    {% block more-script %}{% endblock %}
+</body>
+
+</html>
