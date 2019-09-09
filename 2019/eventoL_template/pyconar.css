@@ -353,7 +353,7 @@ body {
     height: 70px;
     position: absolute;
     left: 50%;
-    margin-left: -200px;
+    transform: translateX(-50%);
     z-index: 10;
 }
 
