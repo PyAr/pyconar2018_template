@@ -710,7 +710,7 @@
                     </div>
                 </div>
             </div> -->
-            <div class="triangle-down-color-white-reverse relative"></div>
+            <!-- <div class="triangle-down-color-white-reverse relative"></div> -->
             <div class="big-margin"></div>
 
 
@@ -816,16 +816,16 @@
             <div class="big-margin"></div>
 
 
-            <div class="relative full-width big-padding center color-2">
-                <!-- <div class="margin-auto max-w-800">
+            <!-- <div class="relative full-width big-padding center color-2">
+                <div class="margin-auto max-w-800">
                     <h1 class="titulo text-color-1 inline-block">Django Girls</h1>
                     <p class="subtitulo text-color-1 inline-block">La registración al Django Girls que sucederá el jueves
                         22 dentro de la conferencia ya está abierta,
                         <a class="text-color-2 anim escalar" href="http://pyconar.miprimeraweb.org/">anotate!</a></p>
                     <p><img class="shadow" alt="" src="https://pyconar2018.blob.core.windows.net/pyconar-static/template-800x800-inscripcionesabiertas.svg.png" style="height:50%; width:90%"></p>
-                </div> -->
+                </div>
             </div>
-            <div class="triangle-down-color-2 relative"></div>
+            <div class="triangle-down-color-2 relative"></div> -->
 
 
 
@@ -1211,16 +1211,6 @@
         <div class="separador-front color-1 full-width"></div><!-- un margen para que se vea el logo, esto va solo en la front -->
 
         <footer class="main-footer color-1">
-            <div id="Puente-mujer" class="full-width">
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 942.7 327.3">
-                    <path class="fill-white" d="M285.8,234.8C399.7,139.1,530.7,15,530.7,15s13.6-11.9,10.8-14.7S517,15,517,15L195.9,254.3c0,0-81.3,62.5-195.9,73l-5.9,3.7l958.6,0.1v-3.7H263.1C250.2,327.4,195,311.6,285.8,234.8z" />
-                </svg>
-                <div></div>
-                <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" viewBox="0 0 942.7 77.6">
-                    <path class="fill-white" d="M-10-36.8L-5.9,0h56.1l12.2,36.9v50.5H105V37l16.4-37h706.4c4.9,0.3,5.4,7.8,5.6,11.9v75.7h36.3V4.9c0,0,1.7-4.9,9.7-4.9s73.3,0,73.3,0v-36.7L-10-36.8z" />
-                </svg>
-            </div>
-
             <div class="event-contacts full-width">
                 <h3 class="text-color-2 subtitulo">Seguir PyConAr 2019!</h3>
                 <div class="col-md-10 col-md-offset-1 sub-anim sub-escalar">
@@ -1648,10 +1638,10 @@
                 event_place.geometry.location.lng + '&dirflg=b');
 
             var ahora = new Date();
-            if (ahora < new Date(2019, 12, 04)) {
-                var dias = Math.round((new Date(2019, 12, 04) - new Date()) / (1000 * 60 * 60 * 24)) + 1;
+            if (ahora < new Date(2019, 11, 04)) {
+                var dias = Math.round((new Date(2019, 11, 04) - new Date()) / (1000 * 60 * 60 * 24)) + 1;
                 $('#cuenta-regresiva').html('Faltan ' + dias + ' días')
-            } else if (ahora < new Date(2019, 12, 06)) {
+            } else if (ahora < new Date(2019, 11, 06)) {
                 $('#cuenta-regresiva').html('¡Es ahora!')
             } else {
                 $('#cuenta-regresiva').html('Te esperamos en la próxima')
