@@ -1638,10 +1638,10 @@
                 event_place.geometry.location.lng + '&dirflg=b');
 
             var ahora = new Date();
-            if (ahora < new Date(2019, 11, 04)) {
-                var dias = Math.round((new Date(2019, 11, 04) - new Date()) / (1000 * 60 * 60 * 24)) + 1;
+            if (ahora < new Date(2019, 12, 04)) {
+                var dias = Math.round((new Date(2019, 12, 04) - new Date()) / (1000 * 60 * 60 * 24)) + 1;
                 $('#cuenta-regresiva').html('Faltan ' + dias + ' días')
-            } else if (ahora < new Date(2019, 11, 06)) {
+            } else if (ahora < new Date(2019, 12, 06)) {
                 $('#cuenta-regresiva').html('¡Es ahora!')
             } else {
                 $('#cuenta-regresiva').html('Te esperamos en la próxima')
