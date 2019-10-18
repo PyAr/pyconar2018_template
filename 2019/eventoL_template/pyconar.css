@@ -370,6 +370,12 @@ body {
     }
 }
 
+@media screen and (min-width: 1920px) {
+    .portada__info {
+        bottom: 45%;
+    }
+}
+
 .portada_container {
     height: 100vh;
 }
