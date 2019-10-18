@@ -316,9 +316,14 @@ body {
 #pyconar-logo {
     position: fixed;
     margin: auto;
-    width: 580px;
+    width: 70%;
     left: 50%;
     transform: translateX(-50%);
+}
+@media screen and (min-width: 1024px) {
+    #pyconar-logo {
+        width: 580px;
+    }
 }
 
 #portada h1 {
@@ -347,15 +352,26 @@ body {
     max-width: 400px;
     border-radius: 15px;
     background: rgba(255, 255, 255, .5);
-    height: 70px;
-
+    /* height: 70px; */
 }
+
 
 .portada__info {
     position: absolute;
     left: 50%;
-    top: 400px;
+    bottom: 34%;
     transform: translateX(-50%);
+    width: 100%;
+}
+
+@media screen and (min-width: 1366px) {
+    .portada__info {
+        bottom: 21%;
+    }
+}
+
+.portada_container {
+    height: 100vh;
 }
 
 .remeras img {
