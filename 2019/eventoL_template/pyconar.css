@@ -79,6 +79,10 @@ body .container-fluid .well {
     background-color: #4494D0 !important;
 }
 
+.color-e {
+    background-color: #eee !important;
+}
+
 .text-color-2 {
     color: #FDD301 !important;
 }
@@ -320,9 +324,16 @@ body {
     left: 50%;
     transform: translateX(-50%);
 }
+
 @media screen and (min-width: 1024px) {
     #pyconar-logo {
         width: 580px;
+    }
+}
+
+@media screen and (max-width: 650px) {
+    #pyconar-logo {
+        margin-top: calc(30vh - 30vw);
     }
 }
 
@@ -340,7 +351,7 @@ body {
     font-family: comfortaa;
     font-size: 18pt;
     letter-spacing: 5px;
-    background: #fff;
+    background: #FDD301;
     opacity: .8;
     margin: 0;
     margin-bottom: 30px;
@@ -355,11 +366,10 @@ body {
     /* height: 70px; */
 }
 
-
 .portada__info {
     position: absolute;
     left: 50%;
-    bottom: 34%;
+    bottom: 21%;
     transform: translateX(-50%);
     width: 100%;
 }
@@ -384,11 +394,10 @@ body {
     width: 290px;
 }
 
-.social-icons {
-}
+.social-icons {}
 
 .social-icons a {
-    color: #ffff;
+    color: #4494D0;
     font-size: 24px;
     margin: 0 20px 20px;
 }
@@ -457,7 +466,7 @@ body {
 
 .event-contacts {
     position: absolute;
-    bottom: 15px;
+    bottom: 5px;
 }
 
 .event-contacts a {
@@ -468,6 +477,7 @@ body {
     position: absolute;
     right: 10px;
     bottom: 10px;
+    background-color: #4494D0;
 }
 
 #Puente-mujer {
