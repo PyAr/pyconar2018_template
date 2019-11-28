@@ -497,6 +497,31 @@ body {
     border: solid 20px #fff;
 }
 
+.grid3 {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.grid3__item {
+    padding: 10px;
+    background-color: #fff;
+}
+
+.grid3__item h4 {
+    color: #4494D0;
+}
+
+.grid3__item p {
+    margin-top: 15px;
+}
+
+/* .grid3__item small {
+    color: #FDD301;
+} */
+.grid3__item ul {
+    text-align: left;
+}
 @media(max-width:900px) {
     .columnas-2 {
         -webkit-columns: auto 1;
