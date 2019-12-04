@@ -500,9 +500,8 @@ body {
 .grid3 {
     display: grid;
     grid-gap: 10px;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(295px, 1fr));
 }
-
 .grid3__item {
     padding: 10px;
     background-color: #fff;
